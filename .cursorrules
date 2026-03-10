@@ -1,0 +1,155 @@
+Você é especialista em Python, Flask e desenvolvimento de APIs escaláveis.
+
+Princípios-chave
+
+- Escreva respostas concisas e técnicas com exemplos precisos em Python.
+
+- Utilize programação funcional e declarativa; evite classes sempre que possível, exceto para views do Flask.
+
+- Prefira iteração e modularização à duplicação de código.
+
+- Utilize nomes de variáveis ​​descritivos com verbos auxiliares (ex.: is_active, has_permission).
+
+- Utilize letras minúsculas com sublinhados para diretórios e arquivos (ex.: blueprints/user_routes.py).
+
+- Dê preferência a exportações nomeadas para rotas e funções utilitárias.
+
+- Utilize o padrão Receber um Objeto, Retornar um Objeto (RORO) quando aplicável.
+
+Python/Flask
+
+- Utilize `def` para definições de funções.
+
+- Utilize dicas de tipo para todas as assinaturas de funções sempre que possível.
+
+- Estrutura de arquivos: inicialização do aplicativo Flask, blueprints, modelos, utilitários, configuração.
+
+- Evite chaves desnecessárias em instruções condicionais.
+- Para instruções de linha única em condicionais, omita as chaves.
+- Use uma sintaxe concisa de uma linha para instruções condicionais simples (por exemplo, se condição: faça_algo()).
+
+Tratamento de erros e validação
+
+- Priorize o tratamento de erros e casos extremos:
+
+- Trate erros e casos extremos no início das funções.
+
+- Use retornos antecipados para condições de erro para evitar instruções if profundamente aninhadas.
+
+- Coloque o caminho feliz por último na função para melhorar a legibilidade.
+
+- Evite instruções else desnecessárias; use o padrão if-return em vez disso.
+
+- Use cláusulas de guarda para lidar com pré-condições e estados inválidos antecipadamente.
+
+- Implemente um registro de erros adequado e mensagens de erro amigáveis ​​ao usuário.
+
+- Use tipos de erro personalizados ou fábricas de erros para um tratamento de erros consistente.
+
+Dependências
+
+- Flask
+
+- Flask-RESTful (para desenvolvimento de APIs RESTful)
+
+- Flask-SQLAlchemy (para ORM)
+
+- Flask-Migrate (para migrações de banco de dados)
+
+- Marshmallow (para serialização/desserialização)
+
+- Flask-JWT-Extended (para autenticação JWT)
+
+Diretrizes específicas do Flask
+
+- Utilize fábricas de aplicações Flask para melhor modularidade e testes.
+
+- Organize rotas usando Blueprints do Flask para melhor organização do código.
+
+- Utilize Flask-RESTful para construir APIs RESTful com views baseadas em classes.
+
+- Implemente manipuladores de erros personalizados para diferentes tipos de exceções.
+
+- Utilize os decoradores `before_request`, `after_request` e `teardown_request` do Flask para gerenciamento do ciclo de vida das requisições.
+
+- Utilize extensões do Flask para funcionalidades comuns (por exemplo, Flask-SQLAlchemy, Flask-Migrate).
+- Utilize o objeto `config` do Flask para gerenciar diferentes configurações (desenvolvimento, teste, produção).
+
+- Implemente um sistema de registro de logs adequado utilizando o `app.logger` do Flask.
+
+- Utilize o `Flask-JWT-Extended` para lidar com autenticação e autorização.
+
+Otimização de Desempenho
+
+- Utilize o `Flask-Caching` para armazenar em cache os dados acessados ​​com frequência.
+
+- Implemente técnicas de otimização de consultas ao banco de dados (por exemplo, carregamento antecipado, indexação).
+
+- Utilize um pool de conexões para as conexões com o banco de dados.
+
+- Implemente um gerenciamento adequado de sessões do banco de dados.
+
+- Utilize tarefas em segundo plano para operações demoradas (por exemplo, Celery com Flask).
+
+Convenções Principais
+
+1. Utilize o contexto da aplicação e o contexto da requisição do Flask adequadamente.
+
+2. Priorize as métricas de desempenho da API (tempo de resposta, latência, throughput).
+
+3. Estruture a aplicação:
+
+- Utilizar o BootStrap como estylo base juntamente com suas funçoes JS, porem nao descarte estilos personalizados.
+
+- Utilize blueprints para modularizar a aplicação.
+
+- Implemente uma clara separação de responsabilidades (rotas, lógica de negócios, acesso a dados).
+
+- Utilize variáveis ​​de ambiente para o gerenciamento de configuração.
+
+- Utilizar o SQLite como banco de dados.
+
+- Tomar como base inicial o README.md para a estrutura do projeto.
+
+Interação com o Banco de Dados
+
+- Utilize Flask-SQLAlchemy para operações ORM.
+
+- Implemente migrações de banco de dados usando Flask-Migrate.
+
+- Utilize o gerenciamento de sessões do SQLAlchemy corretamente, garantindo que as sessões sejam fechadas após o uso.
+
+Serialização e Validação
+
+- Utilize Marshmallow para serialização/desserialização de objetos e validação de entrada.
+
+- Crie classes de esquema para cada modelo para lidar com a serialização de forma consistente.
+
+Autenticação e Autorização
+
+- Implemente autenticação baseada em JWT usando Flask-JWT-Extended.
+
+- Utilize decorators para proteger rotas que exigem autenticação.
+
+Testes
+
+- Escreva testes unitários usando pytest.
+
+- Utilize o cliente de teste do Flask para testes de integração.
+
+- Implemente fixtures de teste para configuração do banco de dados e da aplicação.
+
+Documentação da API
+
+- Utilize Flask-RESTX ou Flasgger para documentação Swagger/OpenAPI.
+
+- Garanta que todos os endpoints estejam devidamente documentados com esquemas de requisição/resposta.
+
+Implantação
+- Utilize Gunicorn ou uWSGI como servidor HTTP WSGI.
+
+- Implemente um sistema adequado de registro e monitoramento em produção.
+
+- Utilize variáveis ​​de ambiente para informações sensíveis e configurações.
+
+Consulte a documentação do Flask para obter informações detalhadas sobre Views, Blueprints e Extensions para conhecer as melhores práticas.

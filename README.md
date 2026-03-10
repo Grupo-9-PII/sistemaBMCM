@@ -20,7 +20,7 @@
 13. [Banco de Dados / Modelos](#banco-de-dados--modelos)
 14. [Bibliografia](#bibliografia)
 
-# Nome do Projeto
+# Sistema de Gestão de Integrantes da Banda Marcial Municipal de Marília – SP
 
 ### Dependencias Principais
 

@@ -32,7 +32,7 @@
 
 ## Descritivo
 
-- Aplicativo Web desenvolvido em Python em cumprimento ao Projeto Integrado I em  Computação do ano de 2016, pelos integrantes do Grupo 9 da DPR7.
+- Aplicativo Web desenvolvido em Python em cumprimento ao Projeto Integrado I em  Computação do ano de 2016, pelos integrantes do Grupo 9 da DPR7, Para a Gestão dos integrantes da Banda Marcial Cidade de Marília.
 
 ## Integrantes
 
@@ -48,7 +48,7 @@
 
 ## Facilitadora UNIVESP
 
-- Carol Reis
+- David Miguel Soares Junior
 
 ### Objetivos do Projeto
 

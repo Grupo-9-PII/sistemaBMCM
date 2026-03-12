@@ -121,7 +121,7 @@ Exemplo:
 
 ![Tela de bloqueio por ecesso de erros de Login](./assets/imgs/bloq.png)
 
-![3º Print de Tela](./assets/imgs/)
+![Tela Dashborad](./assets/imgs/Dash.png)
 
 ## LICENÇA
 

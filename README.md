@@ -99,21 +99,14 @@ def listar_usuarios():
 
 ```
 
-### Funcionalidades
-
-Lista clara do que o sistema consegue fazer.
-
-Pode ser em bullets ou tabelas.
-
-Exemplo:
-
 ####  Funcionalidades
 
-- Cadastro de usuários, com funções de usuários e Administrador do sistema
-- Cadastro de integrantes da banda, classificando entre integrantes da Banda e Adminstração, com as devidas funções
+- Cadastro de usuários, com funções de usuários e Administrador do sistema;
+    - Segurança Implementada: após 3 tentativas de login sem sucesso, o sistema bloqueia o usuario por 12 horas.
+- Cadastro de integrantes, edição e inativação dos integrantes dad banda, resolvemos inativar os integrantes da banda no lugar de deleta-los, para gerar um historico de integrantes que participaram da Banda de maeira permanente.
 - Registro e consulta de dados
 - Relatórios
-- Interface responsiva usando Bootstrap
+- Interface responsiva usando Bootstrap, sendo assim, caso o aplicativo esteja hospedado em um servidor com acesso externo a internet, o aplicativo pode ser acessado via dispositivos moveis sem dificuldade de visualização, pois o mesmo se adequa a varias telas.
 
 #### Print de Telas do Sistema
 
@@ -176,6 +169,151 @@ Exemplo:
 
 O banco de dados configurado no sistema é o SQLite3.
 Nome da Base de Dados: database.db
+
+### Extrutura das Tablelas do BD
+
+Tabelas do Banco de dados
+```
+Table User
+Campos:
+    Id              Integer        Primary Key
+    username        String(100)    unique=True Null-false
+    password        String(255)    Null=false
+    is_admin        Boolean
+    is_active       Boolean
+    login_attempts  Integer  
+    blocked_until   DateTime
+
+Table Naipe
+Campos:
+    Id              Integer        Primary Key
+    Nome            String(100)
+
+Table FuncaoBanda
+    Id              Integer        Primary Key
+    nome_funcao     String(100)
+
+Table TipoInstrumento
+    Id              Integer        Primary Key
+    nome            String(50)
+
+Table Escola
+    Id              Integer        Primary Key
+    nome            String(200)
+    endereco        String(300)
+
+Table Alunos
+    id              Integer        Primary_key
+    nome            String(200)
+    data_nascimento Date
+    naturalidade    String(100)
+    cin_rg          String(20)      
+    uid_vt          String(20)
+    email           String(150)
+    telefone        String(20)
+    cep             String(10)
+    endereco        String(300)
+    bairro          String(100)
+    cidade          String(100)
+    estado          String(2)
+    foto_path       String(500)
+    ativo           Boolean
+    created_at      DateTime
+
+Table Responsavel
+    id              Integer         Primary_key
+    aluno_id        Integer                     ForeignKey('aluno.id')
+    nome_pai        String(200)
+    nome_mae        String(200)
+    telefone        String(20)
+    email           String(150)
+    endereco        String(300)
+
+Table AlunoEscola
+    id              Integer         Primary_key
+    aluno_id        Integer                     ForeignKey('aluno.id')
+    escola_id       Integer                     ForeignKey('escola.id')
+    data_matricula  Date
+
+Table Instrumento
+    id              Integer         Primary_key
+    nome            String(100)
+    tipo_id         Integer                     ForeignKey('tipo_instrumento.id')
+    naipe_id        Integer                     ForeignKey('naipe.id'))
+    patrimonio      String(50)
+    marca           String(100)
+    modelo          String(100)
+    estado          String(50)  # Novo, Bom, Regular, Ruim
+    data_aquisicao  Date
+    observacoes     Text
+    ativo           boolean
+
+Table AlunoInstrumento
+    id              Integer         Primary_key
+    aluno_id        Integer                     ForeignKey('aluno.id')
+    instrumento_id  Integer                     ForeignKey('instrumento.id')
+    data_emprestimo Date
+    data_devolucao  Date
+    observacoes     Text
+
+Table Uniforme
+    id              Integer        Primary_key
+    aluno_id        Integer                     ForeignKey('aluno.id')
+    data_entrega    Date
+    tamanho         String(10)
+    observacoes     Text
+
+Table Presenca
+    id              Integer         Primary_key
+    aluno_id        Integer                     ForeignKey('aluno.id')
+    data_presenca = Date
+    presente        Boolean
+    observacoes     Text
+
+Table Cidade
+     id             Integer         Primary_key
+    descricao       String(100)
+    uf              String(2)
+    codigo_ibge     Integer
+    ddd             String(2)
+
+Table Logradouro
+    cep             String(11)                    index=True
+    id =            Integer         Primary_key
+    tipo            String(50))
+    descricao       String(100)
+    cidade_id       Integer                     ForeignKey('cidade.id')
+    uf              String(2)
+    complemento     String(100)
+    descricao_sem_numero    String(100)
+    descricao_cidade        String(100)
+    codigo_cidade_ibge      Integer
+    descricao_bairro        String(100)
+
+
+Table AutorizacaoViagem
+    id              Integer         Primary_key
+    aluno_id        Integer                     ForeignKey('aluno.id')
+    evento_id       Integer                     ForeignKey('evento.id')
+    autorizado      Boolean
+    data_autorizacao Date
+    observacoes     Text
+
+Table Evento
+    id              Integer         Primary_key
+    cidade          String(100)
+    data_evento     Date
+    nome_evento     String(200)
+    telefone        String(20)
+    responsavel     String(150)
+    taxa            Float
+    isento          Boolean
+    status          String(20)                  default="A_CONFIRMAR"
+
+```
+
+
+### Criação do Banco de dados
 
 as base de dados são criadas pelo arquivo models.py
  ```
@@ -344,41 +482,44 @@ class Presenca(db.Model):
 ### Bibliografia
 
  - Documentos institucionais UNIVESP (obrigatórios):
-    - UNIVESP. Orientações para alunos de Projeto Integrador. São Paulo: UNIVESP, 2023.
-    - Disponível em: https://assets.univesp.br/Proj_Integrador/2023-1S/=Orientacoes_para_alunos_de_PI.pdf. Acesso em: 11 mar. 2026.​
-    - UNIVESP. Orientações para avaliação do Projeto Integrador. São Paulo: UNIVESP, 2021. 
-    - Disponível em: https://assets.univesp.br/Proj_Integrador/Orient_para_avaliacao_do_PI_jan2021.pdf. Acesso em: 11 mar. 2026.​
+    - UNIVESP. Orientações para alunos de Projeto Integrador. São Paulo: UNIVESP, 2023.
+    - Disponível em: https://assets.univesp.br/Proj_Integrador/2023-1S/=Orientacoes_para_alunos_de_PI.pdf. Acesso em: 11 mar. 2026.​
+    - UNIVESP. Orientações para avaliação do Projeto Integrador. São Paulo: UNIVESP, 2021. 
+    - Disponível em: https://assets.univesp.br/Proj_Integrador/Orient_para_avaliacao_do_PI_jan2021.pdf. Acesso em: 11 mar. 2026.​
     - Metodologia de pesquisa e ABPP:
-    - AKATOS, E. M.; MARCONI, M. A. Fundamentos de metodologia científica. 8. ed. São Paulo: Atlas, 2020.
-    - GIL, A. C. Como elaborar projetos de pesquisa. 6. ed. São Paulo: Atlas, 2019.
-    - PLONSKY, I.; CAMPOS, A. M. Aprendizagem baseada em problemas: fundamentos e aplicações. São Paulo: Saraiva, 2021.
+    - AKATOS, E. M.; MARCONI, M. A. Fundamentos de metodologia científica. 8. ed. São Paulo: Atlas, 2020.
+    - GIL, A. C. Como elaborar projetos de pesquisa. 6. ed. São Paulo: Atlas, 2019.
+    - PLONSKY, I.; CAMPOS, A. M. Aprendizagem baseada em problemas: fundamentos e aplicações. São Paulo: Saraiva, 2021.
  - Bandas Marciais e Gestão de Integrantes
     - Artigos sobre bandas marciais:
-         -SOARES, J. Ordem unida: aspectos básicos no desenvolvimento performático marcial. Anais do Congresso ANPPOM, 2024. Disponível em: https://anppom.org.br/anais/.... Acesso em: 11 mar. 2026.​
+         -SOARES, J. Ordem unida: aspectos básicos no desenvolvimento performático marcial. Anais do Congresso ANPPOM, 2024. Disponível em: https://anppom.org.br/anais/.... Acesso em: 11 mar. 2026.​
         - Educação musical e bandas escolares:
-        - FUNARTE. Uma experiência em educação musical escolar. Anais do Seminário..., [s.l.], [s.d.]. Disponível em: https://seer.fundarte.rs.gov.br/.... Acesso em: 11 mar. 2026.​
+        - FUNARTE. Uma experiência em educação musical escolar. Anais do Seminário..., [s.l.], [s.d.]. Disponível em: https://seer.fundarte.rs.gov.br/.... Acesso em: 11 mar. 2026.​
  - Livros clássicos:
-    - CASTRO, D. Bandas marciais escolares: organização e regência. Rio de Janeiro: FUNARTE, 2018.
-    - SILVA, M. A. Gestão de grupos musicais comunitários. São Paulo: Annablume, 2020.
+    - CASTRO, D. Bandas marciais escolares: organização e regência. Rio de Janeiro: FUNARTE, 2018.
+    - SILVA, M. A. Gestão de grupos musicais comunitários. São Paulo: Annablume, 2020.
  - Sistemas de Informação para Controle de Pessoas
     - Análise e projeto de sistemas:
-        - SOMMERVILLE, I. Engenharia de software. 10. ed. Porto Alegre: Bookman, 2019.
-        - PRESSMAN, R. S. Engenharia de software: uma abordagem profissional. 9. ed. Porto Alegre: AMGH, 2020.
+        - SOMMERVILLE, I. Engenharia de software. 10. ed. Porto Alegre: Bookman, 2019.
+        - PRESSMAN, R. S. Engenharia de software: uma abordagem profissional. 9. ed. Porto Alegre: AMGH, 2020.
         - Digitalização de processos manuais:
-            - LAUDON, K. C.; LAUDON, J. P. Sistemas de informação gerenciais. 14. ed. São Paulo: Pearson, 2021.
-            - O’BRIEN, J. A.; MARACAS, R. F. Introdução a sistemas de informação. São Paulo: McGraw-Hill, 2019.
+            - LAUDON, K. C.; LAUDON, J. P. Sistemas de informação gerenciais. 14. ed. São Paulo: Pearson, 2021.
+            - O’BRIEN, J. A.; MARACAS, R. F. Introdução a sistemas de informação. São Paulo: McGraw-Hill, 2019.
     - Estudo de caso brasileiro:
-        - CASO Maringá: Gestão de processos administrativos. 35ª SEMAD-USP, [s.l.], [s.d.].
-        - Disponível em: https://edisciplinas.usp.br/.... Acesso em: 11 mar. 2026.​
+        - CASO Maringá: Gestão de processos administrativos. 35ª SEMAD-USP, [s.l.], [s.d.].
+        - Disponível em: https://edisciplinas.usp.br/.... Acesso em: 11 mar. 2026.​
  - Desenvolvimento de Sistemas Web com Python/Flask + Bootstrap
         - Documentação oficial e livros fundamentais:
-            - GRULZ, M. Flask web development: developing web applications with Python. 2. ed. O'Reilly, 2018.
+            - GRULZ, M. Flask web development: developing web applications with Python. 2. ed. O'Reilly, 2018.
     - Bootstrap oficial:
-        - OTTONELLO, J. Bootstrap 5: o guia completo. 1. ed. Novatec, 2022.
-        - BOOTSTRAP. Documentação oficial Bootstrap 5. 2023-2026. Disponível em: https://getbootstrap.com/docs/5.3/. Acesso em: 11 mar. 2026.
+        - OTTONELLO, J. Bootstrap 5: o guia completo. 1. ed. Novatec, 2022.
+        - BOOTSTRAP. Documentação oficial Bootstrap 5. 2023-2026. Disponível em: https://getbootstrap.com/docs/5.3/. Acesso em: 11 mar. 2026.
     - Tutoriais e práticas integrando Flask + Bootstrap:
-        - REVELO. Telas de registro e login com Flask e Firebase. 2023. Disponível em: https://community.revelo.com.br/.... Acesso em: 11 mar. 2026.​
-        - KINSTA. Aplicativo Python Flask: criação e implantação. 2024. Disponível em: https://kinsta.com/pt/blog/.... Acesso em: 11 mar. 2026.​
+        - REVELO. Telas de registro e login com Flask e Firebase. 2023. Disponível em: https://community.revelo.com.br/.... Acesso em: 11 mar. 2026.​
+        - KINSTA. Aplicativo Python Flask: criação e implantação. 2024. Disponível em: https://kinsta.com/pt/blog/.... Acesso em: 11 mar. 2026.​
     - Artigos acadêmicos específicos:
-        - SANTOS, J.; SILVA, R. Desenvolvimento responsivo de sistemas web com Flask e Bootstrap para gestão escolar. Revista Brasileira de Informática na Educação, v. 33, n. 2, p. 78-95, 2025.
-        - FERREIRA, A. Integração Bootstrap em aplicações Flask: boas práticas para interfaces administrativas. Congressos Brasileiros de Software, p. 210-225, 2024.
+        - SANTOS, J.; SILVA, R. Desenvolvimento responsivo de sistemas web com Flask e Bootstrap para gestão escolar. Revista Brasileira de Informática na Educação, v. 33, n. 2, p. 78-95, 2025.
+        - FERREIRA, A. Integração Bootstrap em aplicações Flask: boas práticas para interfaces administrativas. Congressos Brasileiros de Software, p. 210-225, 2024.
+
+
+

@@ -75,8 +75,11 @@ class Aluno(db.Model):
     uid_vt = db.Column(db.String(20), unique=True, nullable=True)
     email = db.Column(db.String(150))
     telefone = db.Column(db.String(20))
+    cep = db.Column(db.String(10))
     endereco = db.Column(db.String(300))
+    bairro = db.Column(db.String(100))
     cidade = db.Column(db.String(100))
+    estado = db.Column(db.String(2))
     foto_path = db.Column(db.String(500))
     ativo = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -152,4 +155,80 @@ class Presenca(db.Model):
     data_presenca = db.Column(db.Date, default=datetime.utcnow().date)
     presente = db.Column(db.Boolean, default=True)
     observacoes = db.Column(db.Text)
+
+
+
+# ========================
+# Tabelas de Endereçamento
+# ========================
+
+class Cidade(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    descricao = db.Column(db.String(100))
+    uf = db.Column(db.String(2))
+    codigo_ibge = db.Column(db.Integer)
+    ddd = db.Column(db.String(2))
+
+    # relacionamento com logradouros
+    logradouros = db.relationship(
+        'Logradouro',
+        backref='cidade',
+        lazy=True,
+        cascade='all, delete-orphan'
+    )
+
+
+class Logradouro(db.Model):
+    cep = db.Column(db.String(11), index=True, nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    tipo = db.Column(db.String(50))
+    descricao = db.Column(db.String(100), nullable=False)
+    cidade_id = db.Column(db.Integer, db.ForeignKey('cidade.id'), nullable=False)
+    uf = db.Column(db.String(2), nullable=False)
+    complemento = db.Column(db.String(100))
+    descricao_sem_numero = db.Column(db.String(100))
+    descricao_cidade = db.Column(db.String(100))
+    codigo_cidade_ibge = db.Column(db.Integer)
+    descricao_bairro = db.Column(db.String(100))
+
+
+# ===============================================
+# |            tabela autorização               |
+# ===============================================
+class AutorizacaoViagem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    aluno_id = db.Column(db.Integer, db.ForeignKey('aluno.id'), nullable=False)
+    evento_id = db.Column(db.Integer, db.ForeignKey('evento.id'), nullable=False)
+    autorizado = db.Column(db.Boolean, default=False)
+    data_autorizacao = db.Column(db.Date)
+    observacoes = db.Column(db.Text)
+
+
+    aluno = db.relationship('Aluno', backref='autorizacoes')
+
+    evento = db.relationship('Evento', backref=db.backref('evento_viagem', uselist=False))
+
+
+
+# ===============================================
+# |              tabela Evento                  |
+# ===============================================
+class Evento(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    cidade = db.Column(db.String(100))
+    data_evento = db.Column(db.Date)
+    nome_evento = db.Column(db.String(200))
+    telefone = db.Column(db.String(20))
+    responsavel = db.Column(db.String(150))
+    taxa = db.Column(db.Float)
+    isento = db.Column(db.Boolean, default=False)
+    status = db.Column(db.String(20), default="A_CONFIRMAR")
+
+
+
+    autorizacoes_evento = db.relationship('AutorizacaoViagem', backref=db.backref('evento_aut', uselist=False), lazy=True)
+
+
+
+
 

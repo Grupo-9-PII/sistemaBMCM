@@ -153,7 +153,7 @@ body {
     font-size: 0.75rem;
 }
 
-/* Forms */
+
 .form-control {
     border-radius: 8px;
     border: 1px solid rgba(148, 163, 184, 0.5);
@@ -170,7 +170,7 @@ body {
 
 .form-label {
     font-weight: 500;
-    color: var(--primary-color);
+    color: #f0f0f0;
     margin-bottom: 8px;
 }
 
@@ -178,6 +178,53 @@ body {
     background-color: var(--accent-color);
     border-color: var(--accent-color);
 }
+
+/* Textos mais claros */
+.card-title {
+    color: #f5f5f5 !important;
+    font-weight: 600;
+}
+
+.card-text {
+    color: #d0d0d0 !important;
+}
+
+h2, h3, h4, h5, h6 {
+    color: #f5f5f5;
+}
+
+p {
+    color: #d0d0d0;
+}
+
+/* Input group text mais claro */
+
+.input-group-text {
+    background-color: rgba(30, 41, 59, 0.8) !important;
+    border-color: rgba(148, 163, 184, 0.5) !important;
+    color: #e5e7eb !important;
+}
+
+/* Melhorias para relatórios */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  .table {
+    font-size: 10px;
+  }
+  
+  .container {
+    max-width: none !important;
+  }
+}
+
 
 /* Login Page */
 .login-container {

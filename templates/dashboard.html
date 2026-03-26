@@ -42,6 +42,32 @@
         </div>
       </div>
     </div>
+    
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body text-center">
+          <i class="bi bi-mortarboard-fill" style="font-size: 3rem; color: #f5576c;"></i>
+          <h5 class="card-title mt-3">Gerenciar Integrantes</h5>
+          <p class="card-text text-muted">Cadastre, edite ou inative membros da banda</p>
+          <a href="{{ url_for('main.listar_alunos') }}" class="btn btn-danger">
+            <i class="bi bi-people me-2"></i>Acessar
+          </a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body text-center">
+          <i class="bi bi-building" style="font-size: 3rem; color: #00b894;"></i>
+          <h5 class="card-title mt-3">Gerenciar Escolas</h5>
+          <p class="card-text text-muted">Cadastre e gerencie escolas parceiras</p>
+          <a href="{{ url_for('main.listar_escolas') }}" class="btn btn-success">
+            <i class="bi bi-building me-2"></i>Acessar
+          </a>
+        </div>
+      </div>
+    </div>
     {% endif %}
 
     <div class="col-md-4">

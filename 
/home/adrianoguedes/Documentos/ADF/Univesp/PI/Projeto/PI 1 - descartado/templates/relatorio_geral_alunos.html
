@@ -1,0 +1,111 @@
+
+{% extends "base.html" %}
+{% block title %}Relatório Geral - Integrantes Ativos{% endblock %}
+
+{% block content %}
+<style>
+  @media print {
+    .no-print { display: none; }
+    .table { font-size: 11px; }
+    .container { max-width: none !important; width: 100% !important; }
+  }
+</style>
+
+<div class="container-fluid mt-4 no-print">
+  <div class="row mb-4">
+    <div class="col">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h1><i class="bi bi-file-earmark-text me-2"></i>Relatório Geral de Integrantes</h1>
+          <p class="mb-0">Integrantes ativos - {{ data_geracao.strftime('%d/%m/%Y às %H:%M') }}</p>
+        </div>
+        <div>
+          <button onclick="window.print()" class="btn btn-success me-2">
+            <i class="bi bi-printer me-1"></i>Imprimir
+          </button>
+          <button onclick="window.close()" class="btn btn-secondary">
+            <i class="bi bi-x-circle me-1"></i>Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="col">
+      <h3>Lista de Integrantes Ativos ({{ total_alunos }})</h3>
+      
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm">
+          <thead class="table-dark">
+            <tr>
+              <th style="width: 60px;">#</th>
+              <th>Nome</th>
+              <th>Endereço Completo</th>
+              <th>Responsável</th>
+              <th>Telefone</th>
+              <th>Escola</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for aluno in alunos %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>
+                {% if aluno.foto_path %}
+                <img src="{{ url_for('static', filename=aluno.foto_path) }}" alt="Foto" 
+                     class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover;">
+                {% endif %}
+                <strong>{{ aluno.nome }}</strong>
+                <br><small class="text-muted">{{ aluno.naturalidade or '' }}</small>
+              </td>
+              <td>
+                {{ aluno.endereco or '' }}<br>
+                {% if aluno.bairro %}{{ aluno.bairro }}, {% endif %}
+                {{ aluno.cidade or '' }} - {{ aluno.estado or '' }}<br>
+                {% if aluno.cep %}CEP: {{ aluno.cep }}{% endif %}
+              </td>
+              <td>
+                {% if aluno.responsaveis %}
+                  {% set resp = aluno.responsaveis[0] %}
+                  {{ resp.nome_pai or '' }} / {{ resp.nome_mae or '' }}<br>
+                  <small class="text-muted">{{ resp.telefone or '' }}</small>
+                {% else %}
+                  <span class="text-muted">Não informado</span>
+                {% endif %}
+              </td>
+              <td>{{ aluno.telefone or '' }}</td>
+              <td>
+                {% if aluno.escolas %}
+                  {% for ae in aluno.escolas %}
+                    {{ ae.escola.nome }}
+                  {% endfor %}
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="row mt-4 no-print">
+        <div class="col-md-6">
+          <p><strong>Total de integrantes ativos:</strong> {{ total_alunos }}</p>
+        </div>
+        <div class="col-md-6 text-end">
+          <p class="mb-0">
+            Gerado em: {{ data_geracao.strftime('%d/%m/%Y às %H:%M') }}<br>
+            Sistema de Controle da Banda Marcial
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+

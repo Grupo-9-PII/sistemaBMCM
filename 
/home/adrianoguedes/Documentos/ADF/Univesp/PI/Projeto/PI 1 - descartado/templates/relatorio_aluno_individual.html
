@@ -1,0 +1,167 @@
+
+{% extends "base.html" %}
+{% block title %}Relatório Individual - {{ aluno.nome }}{% endblock %}
+
+{% block content %}
+<style>
+  @media print {
+    .no-print { display: none; }
+    .container { max-width: none !important; }
+  }
+</style>
+
+<div class="container-fluid mt-4 no-print">
+  <div class="row mb-4">
+    <div class="col">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h1><i class="bi bi-file-person me-2"></i>Relatório Individual</h1>
+          <p class="mb-0">{{ aluno.nome }}</p>
+        </div>
+        <div>
+          <button onclick="window.print()" class="btn btn-success me-2">
+            <i class="bi bi-printer me-1"></i>Imprimir
+          </button>
+          <button onclick="window.close()" class="btn btn-secondary">
+            <i class="bi bi-x-circle me-1"></i>Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid">
+  <!-- Header com foto -->
+  <div class="row mb-5">
+    <div class="col-md-2 text-center">
+      {% if aluno.foto_path %}
+      <img src="{{ url_for('static', filename=aluno.foto_path) }}" alt="Foto do aluno" 
+           class="rounded-circle img-fluid" style="width: 120px; height: 120px; object-fit: cover;">
+      {% else %}
+      <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" 
+           style="width: 120px; height: 120px;">
+        <i class="bi bi-person-circle" style="font-size: 3rem; color: #6c757d;"></i>
+      </div>
+      {% endif %}
+    </div>
+    <div class="col-md-10">
+      <h2 class="mb-2">{{ aluno.nome }}</h2>
+      <p class="text-muted mb-1">
+        ID: {{ aluno.id }} | 
+        Naturalidade: {{ aluno.naturalidade or 'Não informado' }} | 
+        Data de Nascimento: {{ aluno.data_nascimento.strftime('%d/%m/%Y') if aluno.data_nascimento else 'Não informado' }}
+      </p>
+      <span class="badge bg-success">{{ 'ATIVO' }}</span>
+    </div>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <i class="bi bi-geo-alt me-2"></i>Dados de Contato e Endereço
+        </div>
+        <div class="card-body">
+          <table class="table table-borderless">
+            <tr>
+              <th>E-mail:</th>
+              <td>{{ aluno.email or 'Não informado' }}</td>
+            </tr>
+            <tr>
+              <th>Telefone:</th>
+              <td>{{ aluno.telefone or 'Não informado' }}</td>
+            </tr>
+            <tr>
+              <th>CEP:</th>
+              <td>{{ aluno.cep or 'Não informado' }}</td>
+            </tr>
+            <tr>
+              <th>Endereço:</th>
+              <td>{{ aluno.endereco or 'Não informado' }}</td>
+            </tr>
+            <tr>
+              <th>Bairro:</th>
+              <td>{{ aluno.bairro or 'Não informado' }}</td>
+            </tr>
+            <tr>
+              <th>Cidade/UF:</th>
+              <td>{{ aluno.cidade or '' }} - {{ aluno.estado or '' }}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header bg-info text-white">
+          <i class="bi bi-people me-2"></i>Dados do Responsável
+        </div>
+        <div class="card-body">
+          {% if aluno.responsaveis %}
+            {% set resp = aluno.responsaveis[0] %}
+            <table class="table table-borderless">
+              <tr>
+                <th>Pai:</th>
+                <td>{{ resp.nome_pai or 'Não informado' }}</td>
+              </tr>
+              <tr>
+                <th>Mãe:</th>
+                <td>{{ resp.nome_mae or 'Não informado' }}</td>
+              </tr>
+              <tr>
+                <th>Telefone:</th>
+                <td>{{ resp.telefone or 'Não informado' }}</td>
+              </tr>
+              <tr>
+                <th>E-mail:</th>
+                <td>{{ resp.email or 'Não informado' }}</td>
+              </tr>
+              <tr>
+                <th>Endereço:</th>
+                <td>{{ resp.endereco or 'Não informado' }}</td>
+              </tr>
+            </table>
+          {% else %}
+            <p class="text-muted">Dados do responsável não cadastrados</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if aluno.escolas %}
+  <div class="row mb-4">
+    <div class="col">
+      <div class="card">
+        <div class="card-header bg-success text-white">
+          <i class="bi bi-building me-2"></i>Escola(s)
+        </div>
+        <div class="card-body">
+          <ul class="list-unstyled">
+            {% for ae in aluno.escolas %}
+            <li>
+              <i class="bi bi-check-circle text-success me-2"></i>
+              {{ ae.escola.nome }}
+              <small class="text-muted">({{ ae.data_matricula.strftime('%d/%m/%Y') }})</small>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="row no-print">
+    <div class="col text-center">
+      <p class="mb-0 text-muted">
+        <strong>Relatório gerado em:</strong> {{ data_geracao.strftime('%d/%m/%Y às %H:%M') }}<br>
+        Sistema de Controle da Banda Marcial - <span class="badge bg-primary">{{ current_user.username }}</span>
+      </p>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+

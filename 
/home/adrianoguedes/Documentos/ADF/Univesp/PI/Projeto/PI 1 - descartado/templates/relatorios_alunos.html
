@@ -1,0 +1,71 @@
+
+{% extends "base.html" %}
+{% block title %}Relatórios de Integrantes — Sistema PI{% endblock %}
+
+{% block content %}
+
+<div class="container mt-5 fade-in">
+  <div class="row mb-4">
+    <div class="col-12">
+      <h2><i class="bi bi-file-earmark-text me-2"></i>Relatórios de Integrantes</h2>
+      <p class="text-muted">Gere relatórios gerais e individuais dos integrantes ativos</p>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-body text-center">
+          <i class="bi bi-list-ul" style="font-size: 4rem; color: #22c55e;"></i>
+          <h5 class="card-title mt-3">Relatório Geral Ativos</h5>
+          <p class="card-text">Lista todos os integrantes ativos com nome, endereço e responsável</p>
+          <a href="{{ url_for('main.relatorio_geral_alunos') }}" class="btn btn-success btn-lg">
+            <i class="bi bi-file-earmark-pdf me-2"></i>Gerar Relatório Geral
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-body text-center">
+          <i class="bi bi-file-person" style="font-size: 4rem; color: #2563eb;"></i>
+          <h5 class="card-title mt-3">Relatório Individual</h5>
+          <p class="card-text">Relatório completo de um integrante específico (sem dados sensíveis)</p>
+          <a href="{{ url_for('main.listar_alunos') }}" class="btn btn-primary btn-lg">
+            <i class="bi bi-list-ul me-2"></i>Selecionar Integrante
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-5">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-info text-white">
+          <i class="bi bi-info-circle me-2"></i>Observações Importantes
+        </div>
+        <div class="card-body">
+          <ul class="list-unstyled">
+            <li class="mb-2">
+              <i class="bi bi-check-circle text-success me-2"></i>
+              Relatórios respeitam LGPD - dados sensíveis ocultos (RG, UID VT, telefone)
+            </li>
+            <li class="mb-2">
+              <i class="bi bi-check-circle text-success me-2"></i>
+              Apenas alunos ativos são exibidos no relatório geral
+            </li>
+            <li class="mb-2">
+              <i class="bi bi-check-circle text-success me-2"></i>
+              Relatórios são formatados para impressão em PDF ou impressora
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+

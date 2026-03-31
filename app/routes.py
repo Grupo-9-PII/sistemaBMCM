@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from .models import User, Aluno, Escola, Instrumento, TipoInstrumento, Naipe, FuncaoBanda, Responsavel, Uniforme, AlunoInstrumento, AlunoEscola, Logradouro, Cidade
 from . import db
-from .utils import admin_required, SENHA_PADRAO
+from .utils import admin_required, SENHA_PADRAO, normalizar_campo_texto, normalizar_telefone
 from datetime import datetime
 import os
 from werkzeug.utils import secure_filename
@@ -13,7 +13,15 @@ main_bp = Blueprint("main", __name__)
 @main_bp.route("/")
 @login_required
 def dashboard():
-    return render_template("dashboard.html")
+    stats = {
+        'total_alunos': Aluno.query.count(),
+        'alunos_ativos': Aluno.query.filter_by(ativo=True).count(),
+        'total_escolas': Escola.query.count(),
+        'instrumentos_ativos': Instrumento.query.filter_by(ativo=True).count(),
+        'usuarios': User.query.filter_by(is_active=True).count(),
+        'usuarios_admin': User.query.filter_by(is_admin=True, is_active=True).count()
+    }
+    return render_template("dashboard.html", stats=stats)
 
 
 @main_bp.route("/admin")
@@ -193,18 +201,19 @@ def criar_aluno():
     
     if request.method == "POST":
         # Dados pessoais do aluno
-        nome = request.form.get("nome")
+        nome = normalizar_campo_texto(request.form.get("nome"))
         data_nascimento = request.form.get("data_nascimento")
-        naturalidade = request.form.get("naturalidade")
-        cin_rg = request.form.get("cin_rg")
-        uid_vt = request.form.get("uid_vt")
-        email = request.form.get("email")
-        telefone = request.form.get("telefone")
+        naturalidade = normalizar_campo_texto(request.form.get("naturalidade"))
+        cin_rg = request.form.get("cin_rg").upper().strip()
+        email = request.form.get("email").lower().strip() if request.form.get("email") else None
+        telefone = normalizar_telefone(request.form.get("telefone"))
         cep = request.form.get("cep")
-        endereco = request.form.get("endereco")
-        bairro = request.form.get("bairro")
-        cidade = request.form.get("cidade")
-        estado = request.form.get("estado")
+        endereco = normalizar_campo_texto(request.form.get("endereco"))
+        numero = normalizar_campo_texto(request.form.get("numero"))
+        complemento = normalizar_campo_texto(request.form.get("complemento"))
+        bairro = normalizar_campo_texto(request.form.get("bairro"))
+        cidade = normalizar_campo_texto(request.form.get("cidade"))
+        estado = request.form.get("estado").upper().strip() if request.form.get("estado") else None
         
         if not nome:
             flash("Nome é obrigatório.")
@@ -213,11 +222,6 @@ def criar_aluno():
         # Verificar RG único
         if cin_rg and Aluno.query.filter_by(cin_rg=cin_rg).first():
             flash("RG já cadastrado.")
-            return redirect(url_for("main.criar_aluno"))
-        
-        # Verificar UID VT único
-        if uid_vt and Aluno.query.filter_by(uid_vt=uid_vt).first():
-            flash("UID VT já cadastrado.")
             return redirect(url_for("main.criar_aluno"))
         
         # Converter data de nascimento
@@ -235,11 +239,12 @@ def criar_aluno():
             data_nascimento=data_nasc,
             naturalidade=naturalidade,
             cin_rg=cin_rg,
-            uid_vt=uid_vt,
             email=email,
             telefone=telefone,
             cep=cep,
             endereco=endereco,
+            numero=numero,
+            complemento=complemento,
             bairro=bairro,
             cidade=cidade,
             estado=estado,
@@ -311,18 +316,19 @@ def editar_aluno(aluno_id):
     
     if request.method == "POST":
         # Dados pessoais do aluno
-        nome = request.form.get("nome")
+        nome = normalizar_campo_texto(request.form.get("nome"))
         data_nascimento = request.form.get("data_nascimento")
-        naturalidade = request.form.get("naturalidade")
-        cin_rg = request.form.get("cin_rg")
-        uid_vt = request.form.get("uid_vt")
-        email = request.form.get("email")
-        telefone = request.form.get("telefone")
+        naturalidade = normalizar_campo_texto(request.form.get("naturalidade"))
+        cin_rg = request.form.get("cin_rg").upper().strip()
+        email = request.form.get("email").lower().strip() if request.form.get("email") else None
+        telefone = normalizar_telefone(request.form.get("telefone"))
         cep = request.form.get("cep")
-        endereco = request.form.get("endereco")
-        bairro = request.form.get("bairro")
-        cidade = request.form.get("cidade")
-        estado = request.form.get("estado")
+        endereco = normalizar_campo_texto(request.form.get("endereco"))
+        numero = normalizar_campo_texto(request.form.get("numero"))
+        complemento = normalizar_campo_texto(request.form.get("complemento"))
+        bairro = normalizar_campo_texto(request.form.get("bairro"))
+        cidade = normalizar_campo_texto(request.form.get("cidade"))
+        estado = request.form.get("estado").upper().strip() if request.form.get("estado") else None
         
         if not nome:
             flash("Nome é obrigatório.")
@@ -333,13 +339,6 @@ def editar_aluno(aluno_id):
             aluno_existente = Aluno.query.filter_by(cin_rg=cin_rg).first()
             if aluno_existente and aluno_existente.id != aluno_id:
                 flash("RG já cadastrado para outro aluno.")
-                return redirect(url_for("main.editar_aluno", aluno_id=aluno_id))
-        
-        # Verificar UID VT único (exceto o próprio aluno)
-        if uid_vt:
-            aluno_existente = Aluno.query.filter_by(uid_vt=uid_vt).first()
-            if aluno_existente and aluno_existente.id != aluno_id:
-                flash("UID VT já cadastrado para outro aluno.")
                 return redirect(url_for("main.editar_aluno", aluno_id=aluno_id))
         
         # Converter data de nascimento
@@ -356,11 +355,12 @@ def editar_aluno(aluno_id):
         aluno.data_nascimento = data_nasc
         aluno.naturalidade = naturalidade
         aluno.cin_rg = cin_rg
-        aluno.uid_vt = uid_vt
         aluno.email = email
         aluno.telefone = telefone
         aluno.cep = cep
         aluno.endereco = endereco
+        aluno.numero = numero
+        aluno.complemento = complemento
         aluno.bairro = bairro
         aluno.cidade = cidade
         aluno.estado = estado
@@ -467,6 +467,25 @@ def listar_escolas():
     escolas = Escola.query.order_by(Escola.nome).all()
     return render_template("admin_escolas.html", escolas=escolas)
 
+@main_bp.route("/admin/relatorio-escolas")
+@login_required
+@admin_required
+def relatorio_escolas():
+    """Relatório geral de escolas - Versão profissional"""
+    from datetime import datetime
+    
+    escolas = Escola.query.order_by(Escola.nome).all()
+    
+    total_escolas = len(escolas)
+    total_matriculas = sum(len(e.alunos) for e in escolas)
+    data_geracao = datetime.now()
+    
+    return render_template("relatorio_escolas_profissional.html",
+                           escolas=escolas,
+                           total_escolas=total_escolas,
+                           total_matriculas=total_matriculas,
+                           data_geracao=data_geracao)
+
 
 @main_bp.route("/admin/escola/create", methods=["GET", "POST"])
 @login_required
@@ -474,8 +493,8 @@ def listar_escolas():
 def criar_escola():
     """Cria uma nova escola"""
     if request.method == "POST":
-        nome = request.form.get("nome")
-        endereco = request.form.get("endereco")
+        nome = normalizar_campo_texto(request.form.get("nome"))
+        endereco = normalizar_campo_texto(request.form.get("endereco"))
         
         if not nome:
             flash("Nome da escola é obrigatório.")
@@ -499,8 +518,8 @@ def editar_escola(escola_id):
     escola = Escola.query.get_or_404(escola_id)
     
     if request.method == "POST":
-        nome = request.form.get("nome")
-        endereco = request.form.get("endereco")
+        nome = normalizar_campo_texto(request.form.get("nome"))
+        endereco = normalizar_campo_texto(request.form.get("endereco"))
         
         if not nome:
             flash("Nome da escola é obrigatório.")
@@ -515,6 +534,125 @@ def editar_escola(escola_id):
     
     return render_template("admin_escola_form.html", escola=escola, titulo="Editar Escola")
 
+
+@main_bp.route("/admin/instrumentos")
+@login_required
+@admin_required
+def listar_instrumentos():
+    """Lista instrumentos com filtros"""
+    nome_busca = request.args.get('busca', '')
+    ativo_filter = request.args.get('ativo', '')
+    tipo_filter = request.args.get('tipo_id', '')
+    
+    query = Instrumento.query
+    
+    if nome_busca:
+        query = query.filter(Instrumento.nome.ilike(f'%{nome_busca}%'))
+    if ativo_filter == '1':
+        query = query.filter(Instrumento.ativo == True)
+    elif ativo_filter == '0':
+        query = query.filter(Instrumento.ativo == False)
+    if tipo_filter:
+        query = query.filter(Instrumento.tipo_id == int(tipo_filter))
+    
+    instrumentos = query.order_by(Instrumento.nome).all()
+    tipos_instrumento = TipoInstrumento.query.all()
+    
+    return render_template("admin_instrumentos.html", 
+                          instrumentos=instrumentos,
+                          tipos_instrumento=tipos_instrumento,
+                          busca=nome_busca,
+                          ativo_filter=ativo_filter,
+                          tipo_filter=tipo_filter)
+
+@main_bp.route("/admin/instrumento/create", methods=["GET", "POST"])
+@login_required
+@admin_required
+def criar_instrumento():
+    tipos_instrumento = TipoInstrumento.query.all()
+    naipes = Naipe.query.all()
+    
+    if request.method == "POST":
+        nome = request.form.get("nome")
+        if not nome:
+            flash("Nome obrigatório")
+            return redirect(url_for("main.criar_instrumento"))
+        
+        patrimonio = request.form.get("patrimonio")
+        if patrimonio and Instrumento.query.filter_by(patrimonio=patrimonio).first():
+            flash("Patrimônio já cadastrado")
+            return redirect(url_for("main.criar_instrumento"))
+        
+        novo = Instrumento(
+            nome=nome,
+            tipo_id=request.form.get("tipo_id"),
+            naipe_id=request.form.get("naipe_id"),
+            patrimonio=patrimonio,
+            marca=request.form.get("marca"),
+            modelo=request.form.get("modelo"),
+            estado=request.form.get("estado"),
+            data_aquisicao=request.form.get("data_aquisicao"),
+            observacoes=request.form.get("observacoes"),
+            ativo=True
+        )
+        db.session.add(novo)
+        db.session.commit()
+        flash("Instrumento criado!")
+        return redirect(url_for("main.listar_instrumentos"))
+    
+    return render_template("admin_instrumento_form.html", titulo="Novo Instrumento",
+                          instrumento=None, tipos_instrumento=tipos_instrumento, naipes=naipes)
+
+
+@main_bp.route("/admin/instrumento/edit/<int:instrumento_id>", methods=["GET", "POST"])
+@login_required
+@admin_required
+def editar_instrumento(instrumento_id):
+    inst = Instrumento.query.get_or_404(instrumento_id)
+    tipos = TipoInstrumento.query.all()
+    naipes = Naipe.query.all()
+    
+    if request.method == "POST":
+        patrimonio = request.form.get("patrimonio")
+        if patrimonio != inst.patrimonio and Instrumento.query.filter_by(patrimonio=patrimonio).first():
+            flash("Patrimônio já usado")
+            return redirect(url_for("main.editar_instrumento", instrumento_id=inst.id))
+        
+        inst.nome = request.form.get("nome")
+        inst.tipo_id = request.form.get("tipo_id")
+        inst.naipe_id = request.form.get("naipe_id")
+        inst.patrimonio = patrimonio
+        inst.marca = request.form.get("marca")
+        inst.modelo = request.form.get("modelo")
+        inst.estado = request.form.get("estado")
+        inst.data_aquisicao = request.form.get("data_aquisicao")
+        inst.observacoes = request.form.get("observacoes")
+        db.session.commit()
+        flash("Instrumento atualizado!")
+        return redirect(url_for("main.listar_instrumentos"))
+    
+    return render_template("admin_instrumento_form.html", titulo="Editar Instrumento",
+                          instrumento=inst, tipos_instrumento=tipos, naipes=naipes)
+
+@main_bp.route("/admin/instrumento/toggle/<int:instrumento_id>")
+@login_required
+@admin_required
+def toggle_instrumento(instrumento_id):
+    inst = Instrumento.query.get_or_404(instrumento_id)
+    inst.ativo = not inst.ativo
+    db.session.commit()
+    flash(f"Instrumento {'ativado' if inst.ativo else 'inativado'}")
+    return redirect(url_for("main.listar_instrumentos"))
+
+@main_bp.route("/admin/instrumento/delete/<int:instrumento_id>", methods=["POST"])
+@login_required
+@admin_required
+def excluir_instrumento(instrumento_id):
+    inst = Instrumento.query.get_or_404(instrumento_id)
+    db.session.delete(inst)
+    db.session.commit()
+    flash("Instrumento excluído")
+    return redirect(url_for("main.listar_instrumentos"))
 
 @main_bp.route("/admin/escola/delete/<int:escola_id>", methods=["POST"])
 @login_required
@@ -666,10 +804,10 @@ def relatorios_alunos():
 @login_required
 @admin_required
 def relatorio_geral_alunos():
-    """Relatório geral de alunos ativos"""
+    """Relatório geral de alunos ativos - Versão profissional"""
     from datetime import datetime
     
-    # Query para alunos ativos com JOIN responsável e escola
+    # Query para alunos ativos com JOINs necessários
     alunos = Aluno.query.outerjoin(Responsavel).outerjoin(AlunoEscola).outerjoin(Escola).filter(
         Aluno.ativo == True
     ).order_by(Aluno.nome).all()
@@ -677,7 +815,7 @@ def relatorio_geral_alunos():
     total_alunos = Aluno.query.filter(Aluno.ativo == True).count()
     data_geracao = datetime.now()
     
-    return render_template("relatorio_geral_alunos.html", 
+    return render_template("relatorio_geral_alunos_profissional.html", 
                            alunos=alunos, 
                            total_alunos=total_alunos,
                            data_geracao=data_geracao)
@@ -687,18 +825,14 @@ def relatorio_geral_alunos():
 @login_required
 @admin_required
 def relatorio_aluno(aluno_id):
-    """Relatório individual do aluno (resguardando dados sensíveis)"""
+    """Relatório individual profissional"""
     aluno = Aluno.query.options(
         db.joinedload(Aluno.responsaveis),
         db.joinedload(Aluno.escolas).joinedload(AlunoEscola.escola)
     ).get_or_404(aluno_id)
     
-    if not aluno.ativo:
-        flash("Relatório só disponível para alunos ativos")
-        return redirect(url_for('main.listar_alunos'))
-    
     data_geracao = datetime.now()
     
-    return render_template("relatorio_aluno_individual.html", 
+    return render_template("relatorio_aluno_individual_profissional.html", 
                            aluno=aluno, 
                            data_geracao=data_geracao)

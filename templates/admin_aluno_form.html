@@ -70,8 +70,8 @@
                   
                   <div class="col-12">
                     <label for="nome" class="form-label">Nome Completo *</label>
-                    <input type="text" name="nome" id="nome" class="form-control" 
-                           value="{{ aluno.nome if aluno else '' }}" required>
+<input type="text" name="nome" id="nome" class="form-control text-uppercase" 
+                           value="{{ aluno.nome if aluno else '' }}" required oninput="this.value = this.value.toUpperCase()">
                   </div>
                   
                   <div class="col-md-4">
@@ -83,21 +83,15 @@
                   
                   <div class="col-md-4">
                     <label for="naturalidade" class="form-label">Naturalidade</label>
-                    <input type="text" name="naturalidade" id="naturalidade" 
-                           class="form-control" 
-                           value="{{ aluno.naturalidade if aluno else '' }}">
+<input type="text" name="naturalidade" id="naturalidade" 
+                           class="form-control text-uppercase" 
+                           value="{{ aluno.naturalidade if aluno else '' }}" oninput="this.value = this.value.toUpperCase()">
                   </div>
                   
                   <div class="col-md-4">
                     <label for="cin_rg" class="form-label">CIN/RG</label>
                     <input type="text" name="cin_rg" id="cin_rg" class="form-control" 
                            value="{{ aluno.cin_rg if aluno else '' }}">
-                  </div>
-                  
-                  <div class="col-md-6">
-                    <label for="uid_vt" class="form-label">Cartão (Vale Transporte)</label>
-                    <input type="text" name="uid_vt" id="uid_vt" class="form-control" 
-                           value="{{ aluno.uid_vt if aluno else '' }}">
                   </div>
                 </div>
               </div>
@@ -133,22 +127,36 @@
                   </div>
                   
                   <div class="col-12">
-                    <label for="endereco" class="form-label">Endereço</label>
-                    <input type="text" name="endereco" id="endereco" class="form-control" 
+                    <label for="endereco" class="form-label">Endereço (Rua/Avenida)</label>
+<input type="text" name="endereco" id="endereco" class="form-control text-uppercase" 
                            value="{{ aluno.endereco if aluno else '' }}"
-                           placeholder="Rua, número, complemento">
+                           placeholder="RUA/AVENIDA, NOME DA RUA" oninput="this.value = this.value.toUpperCase()">
+                  </div>
+                  
+                  <div class="col-md-3">
+                    <label for="numero" class="form-label">Número</label>
+<input type="text" name="numero" id="numero" class="form-control text-uppercase" 
+                           value="{{ aluno.numero if aluno else '' }}"
+                           placeholder="Nº 123" oninput="this.value = this.value.toUpperCase()">
+                  </div>
+                  
+                  <div class="col-12">
+                    <label for="complemento" class="form-label">Complemento</label>
+<input type="text" name="complemento" id="complemento" class="form-control text-uppercase" 
+                           value="{{ aluno.complemento if aluno else '' }}"
+                           placeholder="APARTAMENTO, BLOCO, CASA, ETC." oninput="this.value = this.value.toUpperCase()">
                   </div>
                   
                   <div class="col-md-4">
                     <label for="bairro" class="form-label">Bairro</label>
-                    <input type="text" name="bairro" id="bairro" class="form-control" 
-                           value="{{ aluno.bairro if aluno else '' }}">
+<input type="text" name="bairro" id="bairro" class="form-control text-uppercase" 
+                           value="{{ aluno.bairro if aluno else '' }}" oninput="this.value = this.value.toUpperCase()">
                   </div>
                   
                   <div class="col-md-4">
                     <label for="cidade" class="form-label">Cidade</label>
-                    <input type="text" name="cidade" id="cidade" class="form-control" 
-                           value="{{ aluno.cidade if aluno else '' }}">
+<input type="text" name="cidade" id="cidade" class="form-control text-uppercase" 
+                           value="{{ aluno.cidade if aluno else '' }}" oninput="this.value = this.value.toUpperCase()">
                   </div>
                   
                   <div class="col-md-4">
@@ -165,14 +173,14 @@
                 <div class="row g-3">
                   <div class="col-md-6">
                     <label for="nome_pai" class="form-label">Nome do Pai</label>
-                    <input type="text" name="nome_pai" id="nome_pai" class="form-control" 
-                           value="{{ aluno.responsaveis[0].nome_pai if aluno and aluno.responsaveis else '' }}">
+<input type="text" name="nome_pai" id="nome_pai" class="form-control text-uppercase" 
+                           value="{{ aluno.responsaveis[0].nome_pai if aluno and aluno.responsaveis else '' }}" oninput="this.value = this.value.toUpperCase()">
                   </div>
                   
                   <div class="col-md-6">
                     <label for="nome_mae" class="form-label">Nome da Mãe</label>
-                    <input type="text" name="nome_mae" id="nome_mae" class="form-control" 
-                           value="{{ aluno.responsaveis[0].nome_mae if aluno and aluno.responsaveis else '' }}">
+<input type="text" name="nome_mae" id="nome_mae" class="form-control text-uppercase" 
+                           value="{{ aluno.responsaveis[0].nome_mae if aluno and aluno.responsaveis else '' }}" oninput="this.value = this.value.toUpperCase()">
                   </div>
                   
                   <div class="col-md-6">
@@ -192,9 +200,9 @@
                   
                   <div class="col-12">
                     <label for="endereco_responsavel" class="form-label">Endereço do Responsável</label>
-                    <input type="text" name="endereco_responsavel" id="endereco_responsavel" 
-                           class="form-control" 
-                           value="{{ aluno.responsaveis[0].endereco if aluno and aluno.responsaveis else '' }}">
+<input type="text" name="endereco_responsavel" id="endereco_responsavel" 
+                           class="form-control text-uppercase" 
+                           value="{{ aluno.responsaveis[0].endereco if aluno and aluno.responsaveis else '' }}" oninput="this.value = this.value.toUpperCase()">
                   </div>
                 </div>
               </div>

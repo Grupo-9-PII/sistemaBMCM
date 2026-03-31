@@ -72,7 +72,6 @@ class Aluno(db.Model):
     data_nascimento = db.Column(db.Date, nullable=True)
     naturalidade = db.Column(db.String(100))
     cin_rg = db.Column(db.String(20), unique=True)
-    uid_vt = db.Column(db.String(20), unique=True, nullable=True)
     email = db.Column(db.String(150))
     telefone = db.Column(db.String(20))
     cep = db.Column(db.String(10))
@@ -82,6 +81,8 @@ class Aluno(db.Model):
     estado = db.Column(db.String(2))
     foto_path = db.Column(db.String(500))
     ativo = db.Column(db.Boolean, default=True)
+    numero = db.Column(db.String(20))
+    complemento = db.Column(db.String(200))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relacionamentos

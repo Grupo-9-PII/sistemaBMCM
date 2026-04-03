@@ -101,6 +101,10 @@ body {
     background: linear-gradient(135deg, #16a34a, #22c55e);
     border: none;
 }
+.btn-creditos {
+    background: linear-gradient(135deg, #161fa3, #2289c5);
+    border: none;
+}
 
 .btn-primary {
     background: linear-gradient(135deg, #2563eb, #4f46e5);
@@ -223,6 +227,32 @@ p {
   .container {
     max-width: none !important;
   }
+}
+
+/* creditos Page */
+
+.creditos-container{
+    max-width: 800px;
+    margin: auto;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.creditos-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            background: #2c3e50;
+            color: #fff;
+            border-radius: 5px;
+            font-size: 0.8em
+}
+
+.creditos-footer {
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #a5a5a5;
+            text-align: center;
 }
 
 

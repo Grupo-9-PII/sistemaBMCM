@@ -836,3 +836,9 @@ def relatorio_aluno(aluno_id):
     return render_template("relatorio_aluno_individual_profissional.html", 
                            aluno=aluno, 
                            data_geracao=data_geracao)
+
+@main_bp.route("/admin/creditos")
+@login_required
+def creditos():
+    """Página de Créditos do sistema"""
+    return render_template("Copywrite.html")

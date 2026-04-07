@@ -79,12 +79,10 @@ def criar_dados_iniciais():
     # Criar funções da banda se não existirem
     if not FuncaoBanda.query.first():
         funcoes = [
-            FuncaoBanda(nome_funcao="MESTRE"),
-            FuncaoBanda(nome_funcao="SUB-MESTRE"),
-            FuncaoBanda(nome_funcao="OFICIAL DE FILEIRA"),
-            FuncaoBanda(nome_funcao="CABO DE FILEIRA"),
-            FuncaoBanda(nome_funcao="ALFERES"),
-            FuncaoBanda(nome_funcao="SOLDADO"),
+            FuncaoBanda(nome_funcao="MAESTRO"),
+            FuncaoBanda(nome_funcao="INSTRUTOR"),
+            FuncaoBanda(nome_funcao="ALUNO"),
+            FuncaoBanda(nome_funcao="COREÓGRAFO"),
         ]
         db.session.add_all(funcoes)
     
@@ -219,6 +217,9 @@ def migrar_banco_novos_campos():
         # Adicionar coluna complemento se não existir
         if 'complemento' not in columns:
             db.session.execute(text("ALTER TABLE aluno ADD COLUMN complemento VARCHAR(200)"))
+        
+        if 'funcao_id' not in columns:
+            db.session.execute(text("ALTER TABLE aluno ADD COLUMN funcao_id INTEGER"))
         
         db.session.commit()
     except Exception as e:

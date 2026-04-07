@@ -67,11 +67,25 @@
                       </div>
                     </div>
                   </div>
+
+                  <div class="col-md-4">
+                    <label for="funcao_id" class="form-label">Função na Banda</label>
+                    <select name="funcao_id" id="funcao_id" class="form-select">
+                      <option value="">-- Selecione --</option>
+                      {% for funcao in funcoes %}
+                      <option value="{{ funcao.id }}" 
+                              {% if aluno and aluno.funcao and aluno.funcao.id == funcao.id %}selected{% endif %}>
+                        {{ funcao.nome_funcao }}
+                      </option>
+                      {% endfor %}
+                    </select>
+                  </div>
                   
                   <div class="col-12">
                     <label for="nome" class="form-label">Nome Completo *</label>
-<input type="text" name="nome" id="nome" class="form-control text-uppercase" 
+                    <input type="text" name="nome" id="nome" class="form-control text-uppercase" 
                            value="{{ aluno.nome if aluno else '' }}" required oninput="this.value = this.value.toUpperCase()">
+
                   </div>
                   
                   <div class="col-md-4">

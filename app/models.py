@@ -83,6 +83,8 @@ class Aluno(db.Model):
     ativo = db.Column(db.Boolean, default=True)
     numero = db.Column(db.String(20))
     complemento = db.Column(db.String(200))
+    funcao_id = db.Column(db.Integer, db.ForeignKey('funcao_banda.id'))
+    funcao = db.relationship('FuncaoBanda', backref='alunos')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relacionamentos

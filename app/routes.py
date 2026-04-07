@@ -195,6 +195,7 @@ def criar_aluno():
     """Cria um novo aluno (integrante da banda)"""
     # Dados para os selects do formulário
     escolas = Escola.query.all()
+    funcoes = FuncaoBanda.query.all()
     instrumentos = Instrumento.query.filter_by(ativo=True).all()
     tipos_instrumento = TipoInstrumento.query.all()
     naipes = Naipe.query.all()
@@ -203,6 +204,7 @@ def criar_aluno():
         # Dados pessoais do aluno
         nome = normalizar_campo_texto(request.form.get("nome"))
         data_nascimento = request.form.get("data_nascimento")
+        funcao_id = request.form.get("funcao_id")
         naturalidade = normalizar_campo_texto(request.form.get("naturalidade"))
         cin_rg = request.form.get("cin_rg").upper().strip()
         email = request.form.get("email").lower().strip() if request.form.get("email") else None
@@ -245,6 +247,7 @@ def criar_aluno():
             endereco=endereco,
             numero=numero,
             complemento=complemento,
+            funcao_id=funcao_id,
             bairro=bairro,
             cidade=cidade,
             estado=estado,
@@ -295,6 +298,7 @@ def criar_aluno():
     return render_template("admin_aluno_form.html",
                            aluno=None,
                            titulo="Novo Integrante",
+                           funcoes=funcoes,
                            escolas=escolas,
                            instrumentos=instrumentos,
                            tipos_instrumento=tipos_instrumento,
@@ -310,12 +314,14 @@ def editar_aluno(aluno_id):
     
     # Dados para os selects do formulário
     escolas = Escola.query.all()
+    funcoes = FuncaoBanda.query.all()
     instrumentos = Instrumento.query.filter_by(ativo=True).all()
     tipos_instrumento = TipoInstrumento.query.all()
     naipes = Naipe.query.all()
     
     if request.method == "POST":
         # Dados pessoais do aluno
+        funcao_id = request.form.get("funcao_id")
         nome = normalizar_campo_texto(request.form.get("nome"))
         data_nascimento = request.form.get("data_nascimento")
         naturalidade = normalizar_campo_texto(request.form.get("naturalidade"))
@@ -361,6 +367,7 @@ def editar_aluno(aluno_id):
         aluno.endereco = endereco
         aluno.numero = numero
         aluno.complemento = complemento
+        aluno.funcao_id = funcao_id
         aluno.bairro = bairro
         aluno.cidade = cidade
         aluno.estado = estado
@@ -419,6 +426,7 @@ def editar_aluno(aluno_id):
     return render_template("admin_aluno_form.html",
                            aluno=aluno,
                            titulo="Editar Integrante",
+                           funcoes=funcoes,
                            escolas=escolas,
                            instrumentos=instrumentos,
                            tipos_instrumento=tipos_instrumento,

@@ -18,7 +18,6 @@
         <i class="bi bi-plus-circle me-2"></i>Novo Integrante
       </a>
     </div>
-
   </div>
 
   <!-- Filtros -->
@@ -62,11 +61,10 @@
               <th><i class="bi bi-person me-1"></i>Nome</th>
               <th><i class="bi bi-calendar me-1"></i>Nascimento</th>
               <th><i class="bi bi-card-text me-1"></i>CIN/RG</th>
-              <th><i class="bi bi-credit-card me-1"></i>CARTÃO</th>
               <th><i class="bi bi-telephone me-1"></i>Telefone</th>
               <th><i class="bi bi-building me-1"></i>Escola</th>
               <th><i class="bi bi-toggle-on me-1"></i>Status</th>
-              <th><i class="bi bi-gear me-1"></i>Ações</th>
+              <th class="text-end"><i class="bi bi-gear me-1"></i>Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -93,12 +91,11 @@
                 {% endif %}
               </td>
               <td>{{ a.cin_rg or '<span class="text-muted">-</span>' }}</td>
-              <td>{{ a.uid_vt or '<span class="text-muted">-</span>' }}</td>
               <td>{{ a.telefone or '<span class="text-muted">-</span>' }}</td>
               <td>
                 {% if a.escolas %}
                   {% for ae in a.escolas %}
-                    {{ ae.escola.nome }}{% if not loop.last %}, {% endif %}
+                    {{ ae.escola.nome }}{% if not loop.last %}<br>{% endif %}
                   {% endfor %}
                 {% else %}
                   <span class="text-muted">-</span>
@@ -107,51 +104,43 @@
               <td>
                 {% if a.ativo %}
                   <span class="badge bg-success">
-                    <i class="bi bi-check-circle me-1"></i>Ativo
+                    <i class="bi bi-check-circle-fill me-1"></i>Ativo
                   </span>
                 {% else %}
                   <span class="badge bg-danger">
-                    <i class="bi bi-x-circle me-1"></i>Inativo
+                    <i class="bi bi-x-circle-fill me-1"></i>Inativo
                   </span>
                 {% endif %}
               </td>
-              <td>
-
-                <div class="btn-group" role="group">
-                  <a href="{{ url_for('main.editar_aluno', aluno_id=a.id) }}" class="btn btn-sm btn-primary" title="Editar">
+              <td class="text-end">
+                <div class="btn-group btn-group-sm" role="group" style="white-space: nowrap;">
+                  <a href="{{ url_for('main.editar_aluno', aluno_id=a.id) }}" class="btn btn-primary" title="Editar">
                     <i class="bi bi-pencil"></i>
                   </a>
-                  
-                  <a href="{{ url_for('main.relatorio_aluno', aluno_id=a.id) }}" class="btn btn-sm btn-info" title="Relatório Individual" 
+                  <a href="{{ url_for('main.relatorio_aluno', aluno_id=a.id) }}" class="btn btn-info" title="Relatório" 
                      {% if not a.ativo %}style="opacity: 0.5; cursor: not-allowed"{% endif %}>
                     <i class="bi bi-file-earmark-person"></i>
                   </a>
-                  
-                  <a href="{{ url_for('main.toggle_aluno', aluno_id=a.id) }}" 
-                     class="btn btn-sm {% if a.ativo %}btn-warning{% else %}btn-success{% endif %}" 
-                     title="{{ 'Inativar' if a.ativo else 'Ativar' }}">
+                  <a href="{{ url_for('main.toggle_aluno', aluno_id=a.id) }}" class="btn {% if a.ativo %}btn-warning{% else %}btn-success{% endif %}" 
+                     title="{% if a.ativo %}Inativar{% else %}Ativar{% endif %}">
                     <i class="bi {% if a.ativo %}bi-pause-circle{% else %}bi-play-circle{% endif %}"></i>
                   </a>
-                  
-                  {% if a.id != current_user.id %}
-                  <form action="{{ url_for('main.excluir_aluno', aluno_id=a.id) }}" method="POST" style="display: inline;">
-                    <button type="submit" class="btn btn-sm btn-danger" title="Excluir" 
-                            onclick="return confirm('Tem certeza que deseja inativar o aluno {{ a.nome }}?')">
+                  <form action="{{ url_for('main.excluir_aluno', aluno_id=a.id) }}" method="POST" style="display: inline-block;">
+                    <button type="submit" class="btn btn-danger" title="Excluir" 
+                            onclick="return confirm('Inativar {{ a.nome }}?')">
                       <i class="bi bi-trash"></i>
                     </button>
                   </form>
-                  {% endif %}
                 </div>
-
               </td>
             </tr>
             {% else %}
             <tr>
-              <td colspan="9" class="text-center py-4">
-                <i class="bi bi-inbox" style="font-size: 2rem;"></i>
-                <p class="mt-2">Nenhum integrante encontrado.</p>
-                <a href="{{ url_for('main.criar_aluno') }}" class="btn btn-primary">
-                  <i class="bi bi-plus-circle me-2"></i>Cadastrar Primeiro Integrante
+              <td colspan="8" class="text-center py-4">
+                <i class="bi bi-people-fill" style="font-size: 3rem; opacity: 0.3;"></i>
+                <h5 class="mt-3">Nenhum integrante cadastrado</h5>
+                <a href="{{ url_for('main.criar_aluno') }}" class="btn btn-primary btn-lg mt-2">
+                  <i class="bi bi-plus-circle me-2"></i>Cadastrar Primeiro
                 </a>
               </td>
             </tr>
@@ -161,11 +150,21 @@
       </div>
     </div>
   </div>
-  
-  <div class="mt-3">
-    <strong>Total de registros:</strong> {{ alunos|length }}
+
+  <div class="mt-4 text-muted">
+    <small>Total: {{ alunos|length }} registros</small>
   </div>
 </div>
+
+<style>
+.btn-group-sm .btn {
+  padding: 0.25rem 0.4rem;
+  font-size: 0.8rem;
+}
+.table td {
+  vertical-align: middle;
+}
+</style>
 
 {% endblock %}
 

@@ -130,7 +130,7 @@ def importar_municipios():
                     # Separar os campos
                     campos = part.split(',')
                     if len(campos) >= 5:
-                        # Remover aspas e espaços
+
                         id_val = int(campos[0].strip())
                         nome = normalizar_campo_texto(campos[1].strip().strip("'"))
                         uf = campos[2].strip().strip("'")

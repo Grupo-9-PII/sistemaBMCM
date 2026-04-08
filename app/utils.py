@@ -9,6 +9,7 @@ from werkzeug.utils import secure_filename
 
 SENHA_PADRAO = "123456"
 
+
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -21,6 +22,18 @@ def admin_required(f):
 
         return f(*args, **kwargs)
     return decorated_function
+
+
+def profissional_required(f):
+    """Decorador para usuários profissionais (não-admin) - apenas login_required"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            flash("Faça login para continuar.")
+            return redirect(url_for("auth.login"))
+        return f(*args, **kwargs)
+    return decorated_function
+
 
 def normalizar_campo_texto(campo):
     """Normaliza campo texto: CAIXA ALTA, remove espaços extras"""

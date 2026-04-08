@@ -14,9 +14,11 @@
       <a href="{{ url_for('main.relatorio_geral_alunos') }}" class="btn btn-info me-2" target="_blank">
         <i class="bi bi-file-earmark-text me-2"></i>Relatórios
       </a>
+      {% if current_user.is_admin %}
       <a href="{{ url_for('main.criar_aluno') }}" class="btn btn-success">
         <i class="bi bi-plus-circle me-2"></i>Novo Integrante
       </a>
+      {% endif %}
     </div>
   </div>
 
@@ -114,23 +116,28 @@
               </td>
               <td class="text-end">
                 <div class="btn-group btn-group-sm" role="group" style="white-space: nowrap;">
+                  {% if current_user.is_admin %}
                   <a href="{{ url_for('main.editar_aluno', aluno_id=a.id) }}" class="btn btn-primary" title="Editar">
                     <i class="bi bi-pencil"></i>
                   </a>
+                  {% endif %}
                   <a href="{{ url_for('main.relatorio_aluno', aluno_id=a.id) }}" class="btn btn-info" title="Relatório" 
                      {% if not a.ativo %}style="opacity: 0.5; cursor: not-allowed"{% endif %}>
                     <i class="bi bi-file-earmark-person"></i>
                   </a>
+                  {% if current_user.is_admin %}
                   <a href="{{ url_for('main.toggle_aluno', aluno_id=a.id) }}" class="btn {% if a.ativo %}btn-warning{% else %}btn-success{% endif %}" 
                      title="{% if a.ativo %}Inativar{% else %}Ativar{% endif %}">
                     <i class="bi {% if a.ativo %}bi-pause-circle{% else %}bi-play-circle{% endif %}"></i>
                   </a>
+
                   <form action="{{ url_for('main.excluir_aluno', aluno_id=a.id) }}" method="POST" style="display: inline-block;">
                     <button type="submit" class="btn btn-danger" title="Excluir" 
                             onclick="return confirm('Inativar {{ a.nome }}?')">
                       <i class="bi bi-trash"></i>
                     </button>
                   </form>
+                  {% endif %}
                 </div>
               </td>
             </tr>

@@ -2,10 +2,11 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from .models import User, Aluno, Escola, Instrumento, TipoInstrumento, Naipe, FuncaoBanda, Responsavel, Uniforme, AlunoInstrumento, AlunoEscola, Logradouro, Cidade
 from . import db
-from .utils import admin_required, SENHA_PADRAO, normalizar_campo_texto, normalizar_telefone
+from .utils import admin_required, profissional_required, SENHA_PADRAO, normalizar_campo_texto, normalizar_telefone
 from datetime import datetime
 import os
 from werkzeug.utils import secure_filename
+from functools import wraps
 
 main_bp = Blueprint("main", __name__)
 
@@ -66,7 +67,7 @@ def criar_usuario():
         db.session.add(novo_usuario)
         db.session.commit()
 
-        flash("Usuário criado com sucesso.")
+        flash("Usuário criado com sucesso!")
         return redirect(url_for("main.listar_usuarios"))
 
     return render_template("admin_user_form.html", usuario=None, titulo="Criar Usuário")
@@ -87,7 +88,6 @@ def editar_usuario(user_id):
             flash("Usuário é obrigatório.")
             return redirect(url_for("main.editar_usuario", user_id=user_id))
 
-        # Verifica se username já existe em outro usuário
         usuario_existente = User.query.filter_by(username=username).first()
         if usuario_existente and usuario_existente.id != user_id:
             flash("Nome de usuário já está em uso.")
@@ -121,7 +121,7 @@ def excluir_usuario(user_id):
     db.session.delete(usuario)
     db.session.commit()
 
-    flash("Usuário excluído com sucesso.")
+    flash("Usuário excluído com sucesso!")
     return redirect(url_for("main.listar_usuarios"))
 
 
@@ -163,10 +163,8 @@ def toggle_usuario(user_id):
 
 @main_bp.route("/admin/alunos")
 @login_required
-@admin_required
 def listar_alunos():
     """Lista todos os alunos com filtros opcionais"""
-    # Filtros
     nome_busca = request.args.get('busca', '')
     ativo_filter = request.args.get('ativo', '')
     
@@ -190,10 +188,9 @@ def listar_alunos():
 
 @main_bp.route("/admin/aluno/create", methods=["GET", "POST"])
 @login_required
-@admin_required
+@profissional_required
 def criar_aluno():
     """Cria um novo aluno (integrante da banda)"""
-    # Dados para os selects do formulário
     escolas = Escola.query.all()
     funcoes = FuncaoBanda.query.all()
     instrumentos = Instrumento.query.filter_by(ativo=True).all()
@@ -201,7 +198,6 @@ def criar_aluno():
     naipes = Naipe.query.all()
     
     if request.method == "POST":
-        # Dados pessoais do aluno
         nome = normalizar_campo_texto(request.form.get("nome"))
         data_nascimento = request.form.get("data_nascimento")
         funcao_id = request.form.get("funcao_id")
@@ -221,12 +217,10 @@ def criar_aluno():
             flash("Nome é obrigatório.")
             return redirect(url_for("main.criar_aluno"))
         
-        # Verificar RG único
         if cin_rg and Aluno.query.filter_by(cin_rg=cin_rg).first():
             flash("RG já cadastrado.")
             return redirect(url_for("main.criar_aluno"))
         
-        # Converter data de nascimento
         data_nasc = None
         if data_nascimento:
             try:
@@ -235,7 +229,6 @@ def criar_aluno():
                 flash("Data de nascimento inválida.")
                 return redirect(url_for("main.criar_aluno"))
         
-        # Criar aluno
         novo_aluno = Aluno(
             nome=nome,
             data_nascimento=data_nasc,
@@ -254,16 +247,14 @@ def criar_aluno():
             ativo=True
         )
         db.session.add(novo_aluno)
-        db.session.flush()  # Para obter o ID do aluno
+        db.session.flush() 
         
-        # Processar upload de foto
         foto = request.files.get('foto')
         if foto and foto.filename:
             foto_path = salvar_foto_aluno(foto, novo_aluno.id)
             if foto_path:
                 novo_aluno.foto_path = foto_path
         
-        # Dados do responsável
         nome_pai = request.form.get("nome_pai")
         nome_mae = request.form.get("nome_mae")
         telefone_responsavel = request.form.get("telefone_responsavel")
@@ -281,7 +272,6 @@ def criar_aluno():
             )
             db.session.add(responsavel)
         
-        # Escola
         escola_id = request.form.get("escola_id")
         if escola_id:
             aluno_escola = AlunoEscola(
@@ -307,12 +297,10 @@ def criar_aluno():
 
 @main_bp.route("/admin/aluno/edit/<int:aluno_id>", methods=["GET", "POST"])
 @login_required
-@admin_required
+@profissional_required
 def editar_aluno(aluno_id):
-    """Edita um aluno existente"""
     aluno = Aluno.query.get_or_404(aluno_id)
     
-    # Dados para os selects do formulário
     escolas = Escola.query.all()
     funcoes = FuncaoBanda.query.all()
     instrumentos = Instrumento.query.filter_by(ativo=True).all()
@@ -320,7 +308,6 @@ def editar_aluno(aluno_id):
     naipes = Naipe.query.all()
     
     if request.method == "POST":
-        # Dados pessoais do aluno
         funcao_id = request.form.get("funcao_id")
         nome = normalizar_campo_texto(request.form.get("nome"))
         data_nascimento = request.form.get("data_nascimento")
@@ -340,14 +327,12 @@ def editar_aluno(aluno_id):
             flash("Nome é obrigatório.")
             return redirect(url_for("main.editar_aluno", aluno_id=aluno_id))
         
-        # Verificar RG único (exceto o próprio aluno)
         if cin_rg:
             aluno_existente = Aluno.query.filter_by(cin_rg=cin_rg).first()
             if aluno_existente and aluno_existente.id != aluno_id:
                 flash("RG já cadastrado para outro aluno.")
                 return redirect(url_for("main.editar_aluno", aluno_id=aluno_id))
         
-        # Converter data de nascimento
         data_nasc = None
         if data_nascimento:
             try:
@@ -356,7 +341,6 @@ def editar_aluno(aluno_id):
                 flash("Data de nascimento inválida.")
                 return redirect(url_for("main.editar_aluno", aluno_id=aluno_id))
         
-        # Atualizar dados do aluno
         aluno.nome = nome
         aluno.data_nascimento = data_nasc
         aluno.naturalidade = naturalidade
@@ -372,14 +356,12 @@ def editar_aluno(aluno_id):
         aluno.cidade = cidade
         aluno.estado = estado
         
-        # Processar upload de nova foto
         foto = request.files.get('foto')
         if foto and foto.filename:
             foto_path = salvar_foto_aluno(foto, aluno.id)
             if foto_path:
                 aluno.foto_path = foto_path
         
-        # Dados do responsável (atualizar ou criar)
         nome_pai = request.form.get("nome_pai")
         nome_mae = request.form.get("nome_mae")
         telefone_responsavel = request.form.get("telefone_responsavel")
@@ -405,10 +387,8 @@ def editar_aluno(aluno_id):
             )
             db.session.add(responsavel)
         
-        # Escola
         escola_id = request.form.get("escola_id")
         
-        # Remove escolas anteriores e adiciona a nova
         AlunoEscola.query.filter_by(aluno_id=aluno.id).delete()
         
         if escola_id:
@@ -435,7 +415,7 @@ def editar_aluno(aluno_id):
 
 @main_bp.route("/admin/aluno/toggle/<int:aluno_id>")
 @login_required
-@admin_required
+@profissional_required
 def toggle_aluno(aluno_id):
     """Ativa ou inativa um aluno"""
     aluno = Aluno.query.get_or_404(aluno_id)
@@ -450,12 +430,11 @@ def toggle_aluno(aluno_id):
 
 @main_bp.route("/admin/aluno/delete/<int:aluno_id>", methods=["POST"])
 @login_required
-@admin_required
+@profissional_required
 def excluir_aluno(aluno_id):
     """Exclui um aluno (soft delete - inativa ao invés de excluir)"""
     aluno = Aluno.query.get_or_404(aluno_id)
     
-    # Soft delete - apenas inativa
     aluno.ativo = False
     db.session.commit()
     
@@ -469,15 +448,15 @@ def excluir_aluno(aluno_id):
 
 @main_bp.route("/admin/escolas")
 @login_required
-@admin_required
 def listar_escolas():
     """Lista todas as escolas"""
     escolas = Escola.query.order_by(Escola.nome).all()
     return render_template("admin_escolas.html", escolas=escolas)
 
+
 @main_bp.route("/admin/relatorio-escolas")
 @login_required
-@admin_required
+@profissional_required
 def relatorio_escolas():
     """Relatório geral de escolas - Versão profissional"""
     from datetime import datetime
@@ -497,7 +476,7 @@ def relatorio_escolas():
 
 @main_bp.route("/admin/escola/create", methods=["GET", "POST"])
 @login_required
-@admin_required
+@profissional_required
 def criar_escola():
     """Cria uma nova escola"""
     if request.method == "POST":
@@ -520,7 +499,7 @@ def criar_escola():
 
 @main_bp.route("/admin/escola/edit/<int:escola_id>", methods=["GET", "POST"])
 @login_required
-@admin_required
+@profissional_required
 def editar_escola(escola_id):
     """Edita uma escola existente"""
     escola = Escola.query.get_or_404(escola_id)
@@ -545,7 +524,6 @@ def editar_escola(escola_id):
 
 @main_bp.route("/admin/instrumentos")
 @login_required
-@admin_required
 def listar_instrumentos():
     """Lista instrumentos com filtros"""
     nome_busca = request.args.get('busca', '')
@@ -573,9 +551,10 @@ def listar_instrumentos():
                           ativo_filter=ativo_filter,
                           tipo_filter=tipo_filter)
 
+
 @main_bp.route("/admin/instrumento/create", methods=["GET", "POST"])
 @login_required
-@admin_required
+@profissional_required
 def criar_instrumento():
     tipos_instrumento = TipoInstrumento.query.all()
     naipes = Naipe.query.all()
@@ -614,7 +593,7 @@ def criar_instrumento():
 
 @main_bp.route("/admin/instrumento/edit/<int:instrumento_id>", methods=["GET", "POST"])
 @login_required
-@admin_required
+@profissional_required
 def editar_instrumento(instrumento_id):
     inst = Instrumento.query.get_or_404(instrumento_id)
     tipos = TipoInstrumento.query.all()
@@ -642,9 +621,10 @@ def editar_instrumento(instrumento_id):
     return render_template("admin_instrumento_form.html", titulo="Editar Instrumento",
                           instrumento=inst, tipos_instrumento=tipos, naipes=naipes)
 
+
 @main_bp.route("/admin/instrumento/toggle/<int:instrumento_id>")
 @login_required
-@admin_required
+@profissional_required
 def toggle_instrumento(instrumento_id):
     inst = Instrumento.query.get_or_404(instrumento_id)
     inst.ativo = not inst.ativo
@@ -652,9 +632,10 @@ def toggle_instrumento(instrumento_id):
     flash(f"Instrumento {'ativado' if inst.ativo else 'inativado'}")
     return redirect(url_for("main.listar_instrumentos"))
 
+
 @main_bp.route("/admin/instrumento/delete/<int:instrumento_id>", methods=["POST"])
 @login_required
-@admin_required
+@profissional_required
 def excluir_instrumento(instrumento_id):
     inst = Instrumento.query.get_or_404(instrumento_id)
     db.session.delete(inst)
@@ -662,11 +643,11 @@ def excluir_instrumento(instrumento_id):
     flash("Instrumento excluído")
     return redirect(url_for("main.listar_instrumentos"))
 
+
 @main_bp.route("/admin/escola/delete/<int:escola_id>", methods=["POST"])
 @login_required
 @admin_required
 def excluir_escola(escola_id):
-    """Exclui uma escola"""
     escola = Escola.query.get_or_404(escola_id)
     
     db.session.delete(escola)
@@ -682,7 +663,7 @@ def excluir_escola(escola_id):
 
 @main_bp.route("/admin/buscar-cep/<cep>")
 @login_required
-@admin_required
+@profissional_required
 def buscar_cep(cep):
     """Busca CEP na tabela de logradouros local"""
     cep = cep.replace('-', '').replace('.', '')
@@ -708,19 +689,17 @@ def buscar_cep(cep):
 
 @main_bp.route("/admin/salvar-logradouro", methods=["POST"])
 @login_required
-@admin_required
+@profissional_required
 def salvar_logradouro():
     """Salva novo logradouro buscado da API ViaCEP"""
     data = request.get_json()
     
     cep = data.get('cep', '').replace('-', '').replace('.', '')
     
-    # Verificar se já existe
     existente = Logradouro.query.filter_by(cep=cep).first()
     if existente:
         return jsonify({'success': True, 'message': 'CEP já existe'})
     
-    # Buscar ou criar cidade
     cidade_nome = data.get('descricao_cidade', '')
     uf = data.get('uf', 'SP')
     
@@ -730,7 +709,6 @@ def salvar_logradouro():
     ).first()
     
     if not cidade:
-        # Criar cidade se não existir
         cidade = Cidade(
             descricao=cidade_nome,
             uf=uf,
@@ -740,7 +718,6 @@ def salvar_logradouro():
         db.session.add(cidade)
         db.session.flush()
     
-    # Criar logradouro
     logradouro = Logradouro(
         cep=cep,
         tipo=data.get('tipo', ''),
@@ -760,49 +737,33 @@ def salvar_logradouro():
     return jsonify({'success': True, 'message': 'Logradouro salvo com sucesso'})
 
 
-# ========================
-# UPLOAD DE FOTOS
-# ========================
-
-
 def salvar_foto_aluno(foto_file, aluno_id):
     """Salva a foto do aluno e retorna o caminho"""
     if not foto_file or foto_file.filename == '':
         return None
     
-    # Extensões permitidas
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
     
     def allowed_file(filename):
         return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
     
     if allowed_file(foto_file.filename):
-        # Criar nome do arquivo com ID único
         ext = foto_file.filename.rsplit('.', 1)[1].lower()
         filename = f"aluno_{aluno_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{ext}"
         
-        # Caminho para salvar
         upload_folder = os.path.join('static', 'uploads', 'alunos')
-        
-        # Criar diretório se não existir
         os.makedirs(upload_folder, exist_ok=True)
         
         filepath = os.path.join(upload_folder, filename)
         foto_file.save(filepath)
         
-        # Retornar caminho relativo para salvar no banco
         return os.path.join('uploads', 'alunos', filename)
     
     return None
 
 
-# ========================
-# ROTAS PARA RELATÓRIOS DE ALUNOS
-# ========================
-
 @main_bp.route("/admin/relatorios-alunos")
 @login_required
-@admin_required
 def relatorios_alunos():
     """Página inicial dos relatórios de alunos"""
     return render_template("relatorios_alunos.html")
@@ -810,12 +771,10 @@ def relatorios_alunos():
 
 @main_bp.route("/admin/relatorio-geral-alunos")
 @login_required
-@admin_required
 def relatorio_geral_alunos():
     """Relatório geral de alunos ativos - Versão profissional"""
     from datetime import datetime
     
-    # Query para alunos ativos com JOINs necessários
     alunos = Aluno.query.outerjoin(Responsavel).outerjoin(AlunoEscola).outerjoin(Escola).filter(
         Aluno.ativo == True
     ).order_by(Aluno.nome).all()
@@ -831,7 +790,6 @@ def relatorio_geral_alunos():
 
 @main_bp.route("/admin/relatorio-aluno/<int:aluno_id>")
 @login_required
-@admin_required
 def relatorio_aluno(aluno_id):
     """Relatório individual profissional"""
     aluno = Aluno.query.options(
@@ -845,8 +803,10 @@ def relatorio_aluno(aluno_id):
                            aluno=aluno, 
                            data_geracao=data_geracao)
 
+
 @main_bp.route("/admin/creditos")
 @login_required
 def creditos():
     """Página de Créditos do sistema"""
     return render_template("Copywrite.html")
+

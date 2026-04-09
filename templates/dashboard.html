@@ -11,7 +11,7 @@
             <i class="bi bi-person-circle" style="font-size: 4rem; color: #1a1a2e;"></i>
           </div>
           <div>
-            <h2 class="mb-1">Bem-vindo, {{ current_user.username }}!</h2>
+            <h2 class="mb-1 text-dark">Bem-vindo, {{ current_user.username }}!</h2>
             <p class="text-muted mb-0">Você está logado no Sistema de Controle da Banda Marcial Cidade de </p>
             {% if current_user.is_admin %}
               <span class="badge bg-primary mt-2">

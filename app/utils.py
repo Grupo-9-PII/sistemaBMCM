@@ -75,7 +75,6 @@ def criar_dados_iniciais():
         tipos = [
             TipoInstrumento(nome="SOPRO"),
             TipoInstrumento(nome="PERCUSSÃO"),
-            TipoInstrumento(nome="METAIS"),
         ]
         db.session.add_all(tipos)
     

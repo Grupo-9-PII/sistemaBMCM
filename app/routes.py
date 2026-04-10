@@ -570,6 +570,16 @@ def criar_instrumento():
             flash("Patrimônio já cadastrado")
             return redirect(url_for("main.criar_instrumento"))
         
+        # Converter data_aquisicao para objeto date
+        data_aquisicao_str = request.form.get("data_aquisicao")
+        data_aquisicao = None
+        if data_aquisicao_str:
+            try:
+                data_aquisicao = datetime.strptime(data_aquisicao_str, '%Y-%m-%d').date()
+            except ValueError:
+                flash("Data de aquisição inválida (use YYYY-MM-DD).")
+                return redirect(url_for("main.criar_instrumento"))
+
         novo = Instrumento(
             nome=nome,
             tipo_id=request.form.get("tipo_id"),
@@ -578,7 +588,7 @@ def criar_instrumento():
             marca=request.form.get("marca"),
             modelo=request.form.get("modelo"),
             estado=request.form.get("estado"),
-            data_aquisicao=request.form.get("data_aquisicao"),
+            data_aquisicao=data_aquisicao,
             observacoes=request.form.get("observacoes"),
             ativo=True
         )
@@ -611,8 +621,18 @@ def editar_instrumento(instrumento_id):
         inst.patrimonio = patrimonio
         inst.marca = request.form.get("marca")
         inst.modelo = request.form.get("modelo")
+        # Converter data_aquisicao para objeto date
+        data_aquisicao_str = request.form.get("data_aquisicao")
+        data_aquisicao = None
+        if data_aquisicao_str:
+            try:
+                data_aquisicao = datetime.strptime(data_aquisicao_str, '%Y-%m-%d').date()
+            except ValueError:
+                flash("Data de aquisição inválida (use YYYY-MM-DD).")
+                return redirect(url_for("main.editar_instrumento", instrumento_id=inst.id))
+
         inst.estado = request.form.get("estado")
-        inst.data_aquisicao = request.form.get("data_aquisicao")
+        inst.data_aquisicao = data_aquisicao
         inst.observacoes = request.form.get("observacoes")
         db.session.commit()
         flash("Instrumento atualizado!")

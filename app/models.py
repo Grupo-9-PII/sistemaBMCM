@@ -93,6 +93,32 @@ class Aluno(db.Model):
     presencas = db.relationship('Presenca', backref='aluno', lazy=True, cascade='all, delete-orphan')
     instrumentos = db.relationship('AlunoInstrumento', backref='aluno', lazy=True, cascade='all, delete-orphan')
     escolas = db.relationship('AlunoEscola', backref='aluno', lazy=True, cascade='all, delete-orphan')
+    autorizacoes_foto = db.relationship(
+        'AutorizacaoFotoMenor',
+        back_populates='aluno',
+        lazy='dynamic',
+        cascade='all, delete-orphan',
+    )
+
+
+class AutorizacaoFotoMenor(db.Model):
+    """Consentimento do responsável para armazenar imagem do menor (LGPD / ECA Digital — trilha em rede interna)."""
+    __tablename__ = 'autorizacao_foto_menor'
+
+    id = db.Column(db.Integer, primary_key=True)
+    aluno_id = db.Column(db.Integer, db.ForeignKey('aluno.id'), nullable=False, index=True)
+    foto_path_coberto = db.Column(db.String(500), nullable=False)
+    responsavel_nome = db.Column(db.String(200), nullable=False)
+    responsavel_parentesco = db.Column(db.String(40), nullable=False)
+    responsavel_cpf = db.Column(db.String(14))
+    assinatura_path = db.Column(db.String(500), nullable=False)
+    termo_versao = db.Column(db.String(32), nullable=False)
+    registrado_por_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    ip_origem = db.Column(db.String(45))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    aluno = db.relationship('Aluno', back_populates='autorizacoes_foto')
+    registrado_por = db.relationship('User', foreign_keys=[registrado_por_id])
 
 
 # Tabela: Responsáveis (pais/responsáveis)

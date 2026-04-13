@@ -1,8 +1,33 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
-from .models import User, Aluno, Escola, Instrumento, TipoInstrumento, Naipe, FuncaoBanda, Responsavel, Uniforme, AlunoInstrumento, AlunoEscola, Logradouro, Cidade
+from .models import (
+    User,
+    Aluno,
+    Escola,
+    Instrumento,
+    TipoInstrumento,
+    Naipe,
+    FuncaoBanda,
+    Responsavel,
+    Uniforme,
+    AlunoInstrumento,
+    AlunoEscola,
+    Logradouro,
+    Cidade,
+)
 from . import db
-from .utils import admin_required, profissional_required, SENHA_PADRAO, normalizar_campo_texto, normalizar_telefone
+from .utils import (
+    admin_required,
+    profissional_required,
+    SENHA_PADRAO,
+    normalizar_campo_texto,
+    normalizar_telefone,
+    consentimento_foto_obrigatorio,
+    validar_payload_autorizacao_foto,
+    registrar_autorizacao_foto_menor,
+    obter_autorizacao_foto_vigente,
+    TERMO_AUTORIZACAO_FOTO_VERSAO,
+)
 from datetime import datetime
 import os
 from werkzeug.utils import secure_filename
@@ -228,7 +253,20 @@ def criar_aluno():
             except ValueError:
                 flash("Data de nascimento inválida.")
                 return redirect(url_for("main.criar_aluno"))
-        
+
+        foto = request.files.get("foto")
+        tem_upload_novo = bool(foto and foto.filename)
+        precisa_aut_foto = consentimento_foto_obrigatorio(
+            data_nasc, tem_upload_novo, None, None
+        )
+        dados_auth_foto = None
+        if precisa_aut_foto:
+            ok_auth, payload_auth = validar_payload_autorizacao_foto(request.form)
+            if not ok_auth:
+                flash(payload_auth)
+                return redirect(url_for("main.criar_aluno"))
+            dados_auth_foto = payload_auth
+
         novo_aluno = Aluno(
             nome=nome,
             data_nascimento=data_nasc,
@@ -247,14 +285,31 @@ def criar_aluno():
             ativo=True
         )
         db.session.add(novo_aluno)
-        db.session.flush() 
-        
-        foto = request.files.get('foto')
+        db.session.flush()
+
         if foto and foto.filename:
             foto_path = salvar_foto_aluno(foto, novo_aluno.id)
             if foto_path:
                 novo_aluno.foto_path = foto_path
-        
+
+        if precisa_aut_foto:
+            if not novo_aluno.foto_path:
+                db.session.rollback()
+                flash(
+                    "Para menor de 18 anos é obrigatório salvar uma foto válida junto com a autorização assinada."
+                )
+                return redirect(url_for("main.criar_aluno"))
+            if not registrar_autorizacao_foto_menor(
+                novo_aluno.id,
+                novo_aluno.foto_path,
+                dados_auth_foto,
+                current_user.id,
+                request,
+            ):
+                db.session.rollback()
+                flash("Não foi possível registrar a assinatura digital. Tente novamente.")
+                return redirect(url_for("main.criar_aluno"))
+
         nome_pai = request.form.get("nome_pai")
         nome_mae = request.form.get("nome_mae")
         telefone_responsavel = request.form.get("telefone_responsavel")
@@ -285,14 +340,20 @@ def criar_aluno():
         flash("Aluno criado com sucesso!")
         return redirect(url_for("main.listar_alunos"))
     
-    return render_template("admin_aluno_form.html",
-                           aluno=None,
-                           titulo="Novo Integrante",
-                           funcoes=funcoes,
-                           escolas=escolas,
-                           instrumentos=instrumentos,
-                           tipos_instrumento=tipos_instrumento,
-                           naipes=naipes)
+    return render_template(
+        "admin_aluno_form.html",
+        aluno=None,
+        titulo="Novo Integrante",
+        funcoes=funcoes,
+        escolas=escolas,
+        instrumentos=instrumentos,
+        tipos_instrumento=tipos_instrumento,
+        naipes=naipes,
+        termo_autorizacao_foto_versao=TERMO_AUTORIZACAO_FOTO_VERSAO,
+        pendente_autorizacao_foto=False,
+        autorizacao_foto_registrada=None,
+        exige_nova_assinatura_no_envio=True,
+    )
 
 
 @main_bp.route("/admin/aluno/edit/<int:aluno_id>", methods=["GET", "POST"])
@@ -340,7 +401,20 @@ def editar_aluno(aluno_id):
             except ValueError:
                 flash("Data de nascimento inválida.")
                 return redirect(url_for("main.editar_aluno", aluno_id=aluno_id))
-        
+
+        foto = request.files.get("foto")
+        tem_upload_novo = bool(foto and foto.filename)
+        precisa_aut_foto = consentimento_foto_obrigatorio(
+            data_nasc, tem_upload_novo, aluno.id, aluno.foto_path
+        )
+        dados_auth_foto = None
+        if precisa_aut_foto:
+            ok_auth, payload_auth = validar_payload_autorizacao_foto(request.form)
+            if not ok_auth:
+                flash(payload_auth)
+                return redirect(url_for("main.editar_aluno", aluno_id=aluno_id))
+            dados_auth_foto = payload_auth
+
         aluno.nome = nome
         aluno.data_nascimento = data_nasc
         aluno.naturalidade = naturalidade
@@ -355,13 +429,30 @@ def editar_aluno(aluno_id):
         aluno.bairro = bairro
         aluno.cidade = cidade
         aluno.estado = estado
-        
-        foto = request.files.get('foto')
+
         if foto and foto.filename:
             foto_path = salvar_foto_aluno(foto, aluno.id)
             if foto_path:
                 aluno.foto_path = foto_path
-        
+
+        if precisa_aut_foto:
+            if not aluno.foto_path:
+                db.session.rollback()
+                flash(
+                    "É necessário manter ou enviar uma foto válida junto com a autorização do responsável."
+                )
+                return redirect(url_for("main.editar_aluno", aluno_id=aluno_id))
+            if not registrar_autorizacao_foto_menor(
+                aluno.id,
+                aluno.foto_path,
+                dados_auth_foto,
+                current_user.id,
+                request,
+            ):
+                db.session.rollback()
+                flash("Não foi possível registrar a assinatura digital. Tente novamente.")
+                return redirect(url_for("main.editar_aluno", aluno_id=aluno_id))
+
         nome_pai = request.form.get("nome_pai")
         nome_mae = request.form.get("nome_mae")
         telefone_responsavel = request.form.get("telefone_responsavel")
@@ -402,15 +493,29 @@ def editar_aluno(aluno_id):
         
         flash("Aluno atualizado com sucesso!")
         return redirect(url_for("main.listar_alunos"))
-    
-    return render_template("admin_aluno_form.html",
-                           aluno=aluno,
-                           titulo="Editar Integrante",
-                           funcoes=funcoes,
-                           escolas=escolas,
-                           instrumentos=instrumentos,
-                           tipos_instrumento=tipos_instrumento,
-                           naipes=naipes)
+
+    pendente_autorizacao_foto = consentimento_foto_obrigatorio(
+        aluno.data_nascimento, False, aluno.id, aluno.foto_path
+    )
+    autorizacao_foto_registrada = obter_autorizacao_foto_vigente(aluno.id, aluno.foto_path)
+    exige_nova_assinatura_no_envio = pendente_autorizacao_foto or (
+        bool(aluno.foto_path) and autorizacao_foto_registrada is None
+    )
+
+    return render_template(
+        "admin_aluno_form.html",
+        aluno=aluno,
+        titulo="Editar Integrante",
+        funcoes=funcoes,
+        escolas=escolas,
+        instrumentos=instrumentos,
+        tipos_instrumento=tipos_instrumento,
+        naipes=naipes,
+        termo_autorizacao_foto_versao=TERMO_AUTORIZACAO_FOTO_VERSAO,
+        pendente_autorizacao_foto=pendente_autorizacao_foto,
+        autorizacao_foto_registrada=autorizacao_foto_registrada,
+        exige_nova_assinatura_no_envio=exige_nova_assinatura_no_envio,
+    )
 
 
 @main_bp.route("/admin/aluno/toggle/<int:aluno_id>")

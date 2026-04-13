@@ -40,7 +40,8 @@
             </li>
           </ul>
 
-          <form method="POST" enctype="multipart/form-data">
+          <form method="POST" enctype="multipart/form-data" id="form-aluno"
+                data-aluno-tem-foto="{{ '1' if aluno and aluno.foto_path else '0' }}">
             <div class="tab-content" id="alunoTabsContent">
               
               <!-- Dados Pessoais -->
@@ -64,6 +65,92 @@
                           <input type="file" name="foto" id="foto" class="d-none" accept="image/*">
                         </div>
                         <small class="text-muted d-block">Foto não obrigatória</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  {% set af = autorizacao_foto_registrada %}
+                  {% set auth_ok_na_foto = af and not (pendente_autorizacao_foto|default(false)) %}
+                  {% set lbl_parent = {'PAI': 'Pai', 'MAE': 'Mãe', 'RESPONSAVEL_LEGAL': 'Responsável legal', 'OUTRO': 'Outro'} %}
+                  <div id="secao-autorizacao-foto"
+                       class="col-12 border rounded p-3 mb-3 bg-light {% if not pendente_autorizacao_foto|default(false) %}d-none{% endif %}"
+                       data-pendente="{{ '1' if pendente_autorizacao_foto|default(false) else '0' }}"
+                       data-exige-novo-envio="{{ '1' if exige_nova_assinatura_no_envio|default(true) else '0' }}"
+                       data-exige-novo-inicial="{{ '1' if exige_nova_assinatura_no_envio|default(true) else '0' }}">
+                    <h6 class="text-primary mb-2">
+                      <i class="bi bi-shield-lock me-1"></i>Autorização para armazenar imagem (menor de 18 anos / LGPD)
+                    </h6>
+                    <div id="autorizacao-foto-resumo-salva"
+                         class="alert alert-success mb-3 {% if not auth_ok_na_foto %}d-none{% endif %}">
+                      {% if auth_ok_na_foto %}
+                      <strong><i class="bi bi-check-circle me-1"></i>Autorização já registrada</strong> para a foto atual.
+                      <ul class="mb-2 small mt-2">
+                        <li>Registrado em: {{ af.created_at.strftime('%d/%m/%Y %H:%M') if af.created_at else '—' }} (UTC sistema)</li>
+                        <li>Signatário: <strong>{{ af.responsavel_nome }}</strong> ({{ lbl_parent.get(af.responsavel_parentesco, af.responsavel_parentesco) }})</li>
+                        {% if af.responsavel_cpf %}<li>CPF informado: {{ af.responsavel_cpf }}</li>{% endif %}
+                        <li>Versão do termo: {{ af.termo_versao }}</li>
+                        <li>Registrado no sistema por: {{ af.registrado_por.username if af.registrado_por else '—' }}{% if af.ip_origem %} — IP: {{ af.ip_origem }}{% endif %}</li>
+                      </ul>
+                      <p class="small mb-2">Assinatura arquivada:</p>
+                      <img src="{{ url_for('static', filename=af.assinatura_path) }}" alt="Assinatura registrada"
+                           class="img-thumbnail bg-white" style="max-height: 120px;">
+                      <p class="small text-muted mt-2 mb-0">
+                        Se trocar a foto deste integrante, será necessário coletar nova autorização e nova assinatura.
+                      </p>
+                      {% endif %}
+                    </div>
+                    <p class="small text-muted mb-2">
+                      Versão do termo: <strong>{{ termo_autorizacao_foto_versao|default('—') }}</strong>.
+                      Em ambiente de rede interna, a assinatura abaixo funciona como <strong>manifestação inequívoca</strong> do responsável,
+                      vinculada ao cadastro e ao arquivo da foto. Para assinatura com certificado ICP-Brasil, use fluxo complementar fora do sistema.
+                    </p>
+                    <div class="small border bg-white p-2 mb-3 rounded" style="max-height: 10rem; overflow-y: auto;">
+                      Pelo presente termo, na qualidade de responsável legal pelo menor vinculado a este cadastro, autorizo de forma livre, informada e inequívoca o armazenamento e o tratamento de sua imagem (foto), exclusivamente para fins de gestão institucional da banda marcial, incluindo identificação, controle de frequência e elaboração de relatórios internos.
+<br>
+Declaro estar ciente de que o tratamento dos dados será realizado em conformidade com a Lei Geral de Proteção de Dados Pessoais
+                    </div>
+                    <div id="bloco-nova-autorizacao-campos" class="row g-2 {% if auth_ok_na_foto %}d-none{% endif %}">
+                      <div class="col-md-6">
+                        <label class="form-label" for="autorizacao_responsavel_nome">Nome completo do responsável que assina *</label>
+                        <input type="text" class="form-control text-uppercase" name="autorizacao_responsavel_nome"
+                               id="autorizacao_responsavel_nome" autocomplete="name"
+                               value="{{ af.responsavel_nome if af else '' }}"
+                               oninput="this.value = this.value.toUpperCase()">
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label" for="autorizacao_responsavel_parentesco">Vínculo *</label>
+                        <select class="form-select" name="autorizacao_responsavel_parentesco" id="autorizacao_responsavel_parentesco">
+                          <option value="">—</option>
+                          <option value="PAI" {% if af and af.responsavel_parentesco == 'PAI' %}selected{% endif %}>Pai</option>
+                          <option value="MAE" {% if af and af.responsavel_parentesco == 'MAE' %}selected{% endif %}>Mãe</option>
+                          <option value="RESPONSAVEL_LEGAL" {% if af and af.responsavel_parentesco == 'RESPONSAVEL_LEGAL' %}selected{% endif %}>Responsável legal</option>
+                          <option value="OUTRO" {% if af and af.responsavel_parentesco == 'OUTRO' %}selected{% endif %}>Outro (especificar em observações do cadastro)</option>
+                        </select>
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label" for="autorizacao_responsavel_cpf">CPF do signatário (opcional)</label>
+                        <input type="text" class="form-control" name="autorizacao_responsavel_cpf" id="autorizacao_responsavel_cpf"
+                               maxlength="14" placeholder="000.000.000-00"
+                               value="{{ af.responsavel_cpf if af and af.responsavel_cpf else '' }}">
+                      </div>
+                      <div class="col-12">
+                        <div class="form-check">
+                          <input class="form-check-input" type="checkbox" value="1" name="autorizacao_foto_aceite" id="autorizacao_foto_aceite">
+                          <label class="form-check-label" for="autorizacao_foto_aceite">
+                            Li e concordo com o termo acima, em nome do menor.
+                          </label>
+                        </div>
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Assinatura do responsável (desenho no quadro) *</label>
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                          <canvas id="canvas-assinatura-foto" width="420" height="160" class="border bg-white rounded touch-none"
+                                  style="touch-action: none; cursor: crosshair;"></canvas>
+                          <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-limpar-assinatura-foto">
+                            <i class="bi bi-eraser"></i> Limpar assinatura
+                          </button>
+                        </div>
+                        <input type="hidden" name="assinatura_foto_data" id="assinatura_foto_data" value="">
                       </div>
                     </div>
                   </div>
@@ -321,6 +408,23 @@ document.getElementById('foto').addEventListener('change', function(e) {
     };
     reader.readAsDataURL(file);
   }
+  if (typeof window.atualizarVisibilidadeAutorizacaoFoto === 'function') {
+    window.atualizarVisibilidadeAutorizacaoFoto();
+  }
+  const secaoAuth = document.getElementById('secao-autorizacao-foto');
+  const resumoSalvaEl = document.getElementById('autorizacao-foto-resumo-salva');
+  const blocoNovaEl = document.getElementById('bloco-nova-autorizacao-campos');
+  if (secaoAuth && file) {
+    secaoAuth.dataset.exigeNovoEnvio = '1';
+    if (resumoSalvaEl) resumoSalvaEl.classList.add('d-none');
+    if (blocoNovaEl) blocoNovaEl.classList.remove('d-none');
+  } else if (secaoAuth && !file) {
+    secaoAuth.dataset.exigeNovoEnvio = secaoAuth.dataset.exigeNovoInicial || '1';
+    if (secaoAuth.dataset.exigeNovoInicial === '0') {
+      if (resumoSalvaEl) resumoSalvaEl.classList.remove('d-none');
+      if (blocoNovaEl) blocoNovaEl.classList.add('d-none');
+    }
+  }
 });
 
 // Máscara para CEP
@@ -424,6 +528,125 @@ function showToast(title, message, type = 'info') {
   const bsToast = new bootstrap.Toast(toast);
   bsToast.show();
 }
+
+(function () {
+  const form = document.getElementById('form-aluno');
+  const secao = document.getElementById('secao-autorizacao-foto');
+  const dataNasc = document.getElementById('data_nascimento');
+  const fotoInput = document.getElementById('foto');
+  const canvas = document.getElementById('canvas-assinatura-foto');
+  const hiddenSig = document.getElementById('assinatura_foto_data');
+  if (!form || !secao || !canvas || !hiddenSig) return;
+
+  function idadeDeNascimento(str) {
+    if (!str) return null;
+    const p = str.split('-');
+    if (p.length !== 3) return null;
+    const d = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+    if (isNaN(d.getTime())) return null;
+    const t = new Date();
+    let a = t.getFullYear() - d.getFullYear();
+    const m = t.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && t.getDate() < d.getDate())) a--;
+    return a;
+  }
+
+  function previewTemFoto() {
+    if (fotoInput && fotoInput.files && fotoInput.files.length) return true;
+    if (form.dataset.alunoTemFoto === '1') return true;
+    const prev = document.getElementById('preview-foto');
+    return prev && prev.tagName === 'IMG';
+  }
+
+  function exigeTratamentoComoMenor() {
+    const raw = dataNasc ? dataNasc.value : '';
+    if (!raw) return true;
+    const idade = idadeDeNascimento(raw);
+    return idade === null || idade < 18;
+  }
+
+  window.atualizarVisibilidadeAutorizacaoFoto = function () {
+    const pendente = secao.dataset.pendente === '1';
+    const mostrar = pendente || (exigeTratamentoComoMenor() && previewTemFoto());
+    if (mostrar) {
+      secao.classList.remove('d-none');
+    } else {
+      secao.classList.add('d-none');
+      hiddenSig.value = '';
+    }
+  };
+
+  if (dataNasc) {
+    dataNasc.addEventListener('change', window.atualizarVisibilidadeAutorizacaoFoto);
+    dataNasc.addEventListener('input', window.atualizarVisibilidadeAutorizacaoFoto);
+  }
+  window.atualizarVisibilidadeAutorizacaoFoto();
+
+  const ctx = canvas.getContext('2d');
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#111';
+
+  function pos(e) {
+    const r = canvas.getBoundingClientRect();
+    const cx = e.clientX !== undefined ? e.clientX : e.touches[0].clientX;
+    const cy = e.clientY !== undefined ? e.clientY : e.touches[0].clientY;
+    return { x: cx - r.left, y: cy - r.top };
+  }
+  let desenhando = false;
+  function start(e) {
+    e.preventDefault();
+    desenhando = true;
+    const p = pos(e);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+  }
+  function move(e) {
+    if (!desenhando) return;
+    e.preventDefault();
+    const p = pos(e);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+  }
+  function end(e) {
+    if (!desenhando) return;
+    desenhando = false;
+    if (e && e.cancelable) e.preventDefault();
+    hiddenSig.value = canvas.toDataURL('image/png');
+  }
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', move);
+  canvas.addEventListener('mouseup', end);
+  canvas.addEventListener('mouseleave', end);
+  canvas.addEventListener('touchstart', start, { passive: false });
+  canvas.addEventListener('touchmove', move, { passive: false });
+  canvas.addEventListener('touchend', end);
+
+  const btnLimpar = document.getElementById('btn-limpar-assinatura-foto');
+  if (btnLimpar) {
+    btnLimpar.addEventListener('click', function () {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      hiddenSig.value = '';
+    });
+  }
+
+  form.addEventListener('submit', function (ev) {
+    if (secao.classList.contains('d-none')) return;
+    if (secao.dataset.exigeNovoEnvio !== '1') return;
+    const aceite = document.getElementById('autorizacao_foto_aceite');
+    if (!aceite || !aceite.checked) {
+      ev.preventDefault();
+      showToast('Autorização', 'Aceite o termo para armazenar a foto do menor.', 'warning');
+      secao.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    if (!hiddenSig.value || hiddenSig.value.length < 200) {
+      ev.preventDefault();
+      showToast('Assinatura', 'Desenhe a assinatura do responsável no quadro.', 'warning');
+      secao.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
+})();
 
 // Permitir buscar com Enter
 document.getElementById('cep').addEventListener('keypress', function(e) {

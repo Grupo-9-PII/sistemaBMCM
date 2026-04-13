@@ -1,5 +1,8 @@
 from functools import wraps
 import os
+import base64
+import binascii
+from datetime import datetime, date
 from flask import redirect, url_for, flash
 from flask_login import current_user
 from .models import User, TipoInstrumento, Naipe, FuncaoBanda, Cidade, Logradouro
@@ -8,6 +11,90 @@ from sqlalchemy import text
 from werkzeug.utils import secure_filename
 
 SENHA_PADRAO = "123456"
+
+# Versão do texto do termo (auditoria LGPD — atualize quando o texto legal mudar).
+TERMO_AUTORIZACAO_FOTO_VERSAO = "2026-04-13"
+
+
+def idade_anos_hoje(data_nascimento):
+    if not data_nascimento:
+        return None
+    hoje = date.today()
+    anos = hoje.year - data_nascimento.year
+    if (hoje.month, hoje.day) < (data_nascimento.month, data_nascimento.day):
+        anos -= 1
+    return anos
+
+
+def exige_autorizacao_foto_menor(data_nascimento):
+    """Menor de 18 anos, ou data desconhecida (tratamos como sensível quando houver foto)."""
+    if data_nascimento is None:
+        return True
+    idade = idade_anos_hoje(data_nascimento)
+    return idade is not None and idade < 18
+
+
+def consentimento_foto_obrigatorio(data_nascimento, tem_upload_novo, aluno_id, foto_path_atual):
+    if not exige_autorizacao_foto_menor(data_nascimento):
+        return False
+    if tem_upload_novo:
+        return True
+    if foto_path_atual and aluno_id:
+        from .models import AutorizacaoFotoMenor
+        existe = AutorizacaoFotoMenor.query.filter_by(
+            aluno_id=aluno_id, foto_path_coberto=foto_path_atual
+        ).first()
+        return existe is None
+    return False
+
+
+def validar_payload_autorizacao_foto(form):
+    nome = normalizar_campo_texto(form.get("autorizacao_responsavel_nome"))
+    par = (form.get("autorizacao_responsavel_parentesco") or "").strip().upper()
+    sig = (form.get("assinatura_foto_data") or "").strip()
+    aceite = form.get("autorizacao_foto_aceite") == "1"
+    if not nome or len(nome) < 3:
+        return False, "Informe o nome completo do responsável que assina a autorização de uso da imagem."
+    if par not in ("PAI", "MAE", "RESPONSAVEL_LEGAL", "OUTRO"):
+        return False, "Selecione o vínculo do signatário com o menor."
+    if not aceite:
+        return False, "É necessário aceitar o termo para armazenar a foto do menor."
+    if not sig.startswith("data:image"):
+        return False, "A assinatura digital (desenho no quadro) do responsável é obrigatória."
+    try:
+        _, b64 = sig.split(",", 1)
+        raw = base64.b64decode(b64, validate=True)
+    except (ValueError, binascii.Error):
+        return False, "Assinatura inválida. Desenhe novamente no quadro e tente salvar."
+    if len(raw) < 120:
+        return False, "Assinatura muito curta. Desenhe no quadro com traço visível."
+    return True, {
+        "nome": nome,
+        "parentesco": par,
+        "cpf": (form.get("autorizacao_responsavel_cpf") or "").strip() or None,
+        "assinatura_data_url": sig,
+    }
+
+
+def salvar_assinatura_data_url(data_url, aluno_id):
+    """Grava PNG da assinatura capturada no navegador (rede interna). Retorna caminho relativo a static/."""
+    if not data_url or not data_url.startswith("data:image"):
+        return None
+    try:
+        _, b64 = data_url.split(",", 1)
+        raw = base64.b64decode(b64, validate=True)
+    except (ValueError, binascii.Error):
+        return None
+    if len(raw) < 120:
+        return None
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    upload_abs = os.path.join(base_dir, "static", "uploads", "autorizacoes_menor")
+    os.makedirs(upload_abs, exist_ok=True)
+    fn = f"assinatura_aluno_{aluno_id}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.png"
+    path_abs = os.path.join(upload_abs, fn)
+    with open(path_abs, "wb") as f:
+        f.write(raw)
+    return os.path.join("uploads", "autorizacoes_menor", fn)
 
 
 def admin_required(f):
@@ -237,4 +324,42 @@ def migrar_banco_novos_campos():
     except Exception as e:
         print(f"Erro na migração: {e}")
         db.session.rollback()
+
+
+def obter_autorizacao_foto_vigente(aluno_id, foto_path):
+    """Registro de consentimento que cobre exatamente o arquivo de foto atual."""
+    if not aluno_id or not foto_path:
+        return None
+    from .models import AutorizacaoFotoMenor
+
+    return (
+        AutorizacaoFotoMenor.query.filter_by(
+            aluno_id=aluno_id,
+            foto_path_coberto=foto_path,
+        )
+        .order_by(AutorizacaoFotoMenor.created_at.desc())
+        .first()
+    )
+
+
+def registrar_autorizacao_foto_menor(aluno_id, foto_path, dados, user_id, request):
+    """Persiste registro de consentimento e arquivo PNG da assinatura."""
+    from .models import AutorizacaoFotoMenor
+
+    assin = salvar_assinatura_data_url(dados["assinatura_data_url"], aluno_id)
+    if not assin:
+        return False
+    row = AutorizacaoFotoMenor(
+        aluno_id=aluno_id,
+        foto_path_coberto=foto_path,
+        responsavel_nome=dados["nome"],
+        responsavel_parentesco=dados["parentesco"],
+        responsavel_cpf=dados["cpf"],
+        assinatura_path=assin,
+        termo_versao=TERMO_AUTORIZACAO_FOTO_VERSAO,
+        registrado_por_id=user_id,
+        ip_origem=getattr(request, "remote_addr", None) or "",
+    )
+    db.session.add(row)
+    return True
 

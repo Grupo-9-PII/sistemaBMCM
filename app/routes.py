@@ -103,22 +103,17 @@ def criar_usuario():
 @admin_required
 def editar_usuario(user_id):
     usuario = User.query.get_or_404(user_id)
+    
+    # Proteção para usuário 'admin'
+    if usuario.username == 'admin' and usuario.id != current_user.id:
+        flash("Usuário 'admin' é protegido contra alterações para garantir manutenção do sistema.", "warning")
+        return redirect(url_for("main.listar_usuarios"))
 
     if request.method == "POST":
-        username = request.form.get("username")
+        # username NÃO é atualizado para preservar acesso - apenas em criação
         is_admin = request.form.get("is_admin") == "on"
         nova_senha = request.form.get("password")
 
-        if not username:
-            flash("Usuário é obrigatório.")
-            return redirect(url_for("main.editar_usuario", user_id=user_id))
-
-        usuario_existente = User.query.filter_by(username=username).first()
-        if usuario_existente and usuario_existente.id != user_id:
-            flash("Nome de usuário já está em uso.")
-            return redirect(url_for("main.editar_usuario", user_id=user_id))
-
-        usuario.username = username
         usuario.is_admin = is_admin
 
         if nova_senha:
@@ -127,7 +122,7 @@ def editar_usuario(user_id):
 
         db.session.commit()
 
-        flash("Usuário atualizado com sucesso.")
+        flash("Usuário atualizado com sucesso. Username preservado para segurança de acesso.")
         return redirect(url_for("main.listar_usuarios"))
 
     return render_template("admin_user_form.html", usuario=usuario, titulo="Editar Usuário")
@@ -138,6 +133,11 @@ def editar_usuario(user_id):
 @admin_required
 def excluir_usuario(user_id):
     usuario = User.query.get_or_404(user_id)
+    
+    # Proteção para usuário 'admin'
+    if usuario.username == 'admin' and usuario.id != current_user.id:
+        flash("Usuário 'admin' não pode ser excluído para garantir manutenção do sistema.", "warning")
+        return redirect(url_for("main.listar_usuarios"))
 
     if usuario.id == current_user.id:
         flash("Você não pode excluir seu próprio usuário.")
@@ -155,6 +155,11 @@ def excluir_usuario(user_id):
 @admin_required
 def resetar_senha(user_id):
     user = User.query.get_or_404(user_id)
+    
+    # Proteção para usuário 'admin'
+    if user.username == 'admin' and user.id != current_user.id:
+        flash("Senha do usuário 'admin' não pode ser resetada para garantir manutenção do sistema.", "warning")
+        return redirect(url_for("main.listar_usuarios"))
 
     user.set_password(SENHA_PADRAO)
     user.must_change_password = True
@@ -169,6 +174,11 @@ def resetar_senha(user_id):
 @admin_required
 def toggle_usuario(user_id):
     user = User.query.get_or_404(user_id)
+    
+    # Proteção para usuário 'admin'
+    if user.username == 'admin' and user.id != current_user.id:
+        flash("Usuário 'admin' não pode ser bloqueado para garantir manutenção do sistema.", "warning")
+        return redirect(url_for("main.listar_usuarios"))
 
     if user.id == current_user.id:
         flash("Você não pode bloquear seu próprio usuário.")

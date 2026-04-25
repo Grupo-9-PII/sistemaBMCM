@@ -1,4 +1,4 @@
-# Sistema de Cadastro de Integrantes da Banda Marcial Municipal de Marília
+# Sistema de Cadastro de Integrantes da Banda Marcial Cidade de Marília
 
 <div align="center">
 
@@ -54,7 +54,7 @@ Tutor: David Miguel Soares Junior
 
 ## Resumo
 
-O presente projeto visa desenvolver um sistema digital para o cadastro e gerenciamento dos integrantes da Banda Marcial Municipal de Marília, diante da ausência de uma solução informatizada para esse processo. Atualmente, o controle é realizado por meio de fichas físicas, o que compromete a organização, a integridade e a recuperação eficiente dos dados. Nesse contexto, propõe-se a criação de um sistema computacional baseado em arquitetura web, com integração a banco de dados relacional, visando otimizar o armazenamento, a consulta e a atualização das informações dos integrantes. A metodologia adotada contempla o levantamento de requisitos funcionais e não funcionais, modelagem do sistema, desenvolvimento da aplicação e testes de validação, garantindo a aderência às necessidades dos usuários. Como resultados parciais, espera-se a implementação de um protótipo funcional com interface intuitiva, capaz de realizar operações de cadastro, edição, busca e organização dos dados por critérios específicos, como ordem alfabética e função na banda. Conclui-se que a adoção de uma solução digital tende a aumentar a eficiência da gestão, reduzir inconsistências e promover maior segurança e acessibilidade das informações, contribuindo para a modernização dos processos administrativos da instituição.
+O presente projeto visa desenvolver um sistema digital para o cadastro e gerenciamento dos integrantes da Banda Marcial Cidade de Marília, diante da ausência de uma solução informatizada para esse processo. Atualmente, o controle é realizado por meio de fichas físicas, o que compromete a organização, a integridade e a recuperação eficiente dos dados. Nesse contexto, propõe-se a criação de um sistema computacional baseado em arquitetura web, com integração a banco de dados relacional, visando otimizar o armazenamento, a consulta e a atualização das informações dos integrantes. A metodologia adotada contempla o levantamento de requisitos funcionais e não funcionais, modelagem do sistema, desenvolvimento da aplicação e testes de validação, garantindo a aderência às necessidades dos usuários. Como resultados parciais, espera-se a implementação de um protótipo funcional com interface intuitiva, capaz de realizar operações de cadastro, edição, busca e organização dos dados por critérios específicos, como ordem alfabética e função na banda. Conclui-se que a adoção de uma solução digital tende a aumentar a eficiência da gestão, reduzir inconsistências e promover maior segurança e acessibilidade das informações, contribuindo para a modernização dos processos administrativos da instituição.
 
 **Palavras-chave:** Sistema digital; Cadastro de usuários; Gestão de dados; Banda marcial; Tecnologia da informação.
 
@@ -62,7 +62,7 @@ O presente projeto visa desenvolver um sistema digital para o cadastro e gerenci
 
 ## Nome do Projeto
 
-Sistema de Cadastro de Integrantes da Banda Marcial Municipal de Marília — SP, desenvolvido no contexto do Projeto Integrado I (UNIVESP).
+Sistema de Cadastro de Integrantes da Banda Marcial Cidade de Marília — SP, desenvolvido no contexto do Projeto Integrado I (UNIVESP).
 
 ---
 
@@ -72,7 +72,7 @@ A transformação digital tem impactado significativamente a forma como organiza
 
 A substituição de processos manuais por soluções digitais tem se mostrado essencial para reduzir erros operacionais, aumentar a produtividade e garantir maior segurança das informações. Sistemas baseados em registros físicos apresentam limitações, como dificuldade de acesso, maior risco de perda de dados e baixa eficiência na organização das informações, o que compromete a gestão e a confiabilidade dos registros (Stair; Reynolds, 2020).
 
-A Banda Marcial Municipal de Marília desempenha um importante papel social, cultural e educacional na comunidade, promovendo a integração de jovens por meio da música e de atividades coletivas. No entanto, observa-se a ausência de um sistema digital para o cadastro e gerenciamento de seus integrantes. Atualmente, o controle das informações é realizado por meio de fichas físicas, o que dificulta a organização, atualização e recuperação dos dados. Essa limitação impacta diretamente na eficiência da gestão, especialmente no que se refere à classificação por ordem alfabética e à organização por função desempenhada na banda.
+A Banda Marcial Cidade de Marília desempenha um importante papel social, cultural e educacional na comunidade, promovendo a integração de jovens por meio da música e de atividades coletivas. No entanto, observa-se a ausência de um sistema digital para o cadastro e gerenciamento de seus integrantes. Atualmente, o controle das informações é realizado por meio de fichas físicas, o que dificulta a organização, atualização e recuperação dos dados. Essa limitação impacta diretamente na eficiência da gestão, especialmente no que se refere à classificação por ordem alfabética e à organização por função desempenhada na banda.
 
 Além disso, o uso de registros manuais aumenta a probabilidade de erros, perda de informações e inconsistências nos dados, comprometendo a confiabilidade do controle administrativo. Tal cenário evidencia a necessidade de modernização do processo de gestão, por meio da implementação de uma solução digital que proporcione maior agilidade, segurança e organização das informações.
 
@@ -82,13 +82,13 @@ Além disso, o uso de registros manuais aumenta a probabilidade de erros, perda 
 
 ### Objetivo Geral
 
-Desenvolver um sistema digital para automatizar o cadastro dos integrantes da Banda Marcial Municipal de Marília/SP, permitindo o registro, a edição e a consulta das informações de forma organizada. O sistema deverá facilitar a atualização de dados, como endereço e função dos integrantes, além de contribuir para uma gestão mais eficiente das informações da banda.
+Desenvolver um sistema digital para automatizar o cadastro dos integrantes da Banda Marcial Cidade de Marília/SP, permitindo o registro, a edição e a consulta das informações de forma organizada. O sistema deverá facilitar a atualização de dados, como endereço e função dos integrantes, além de contribuir para uma gestão mais eficiente das informações da banda.
 
 O sistema possui flexibilidade para adequar-se a outras instituições, sejam elas filantrópicas ou particulares, possibilitando sua utilização em diferentes contextos organizacionais e administrativos.
 
 ### Objetivos Específicos
 
-- Levantar e analisar as necessidades da Banda Marcial Municipal de Marília em relação ao processo de cadastro e gestão dos integrantes.
+- Levantar e analisar as necessidades da Banda Marcial Cidade de Marília em relação ao processo de cadastro e gestão dos integrantes.
 - Definir a estrutura de dados necessária para o armazenamento das informações dos integrantes da banda, como nome, endereço e função desempenhada.
 - Desenvolver um sistema de cadastro digital que permita o registro, edição e consulta das informações dos participantes.
 - Implementar uma interface simples e intuitiva para facilitar o uso do sistema pelos responsáveis pela gestão da banda.
@@ -136,7 +136,7 @@ Funcionalidades implementadas no estado atual do projeto:
 
 ## Metodologia
 
-Este projeto caracteriza-se como uma pesquisa aplicada, de natureza qualitativa e com abordagem exploratória e descritiva. A pesquisa aplicada tem como objetivo gerar conhecimentos para a solução de problemas específicos, neste caso, a ausência de um sistema digital para o cadastro e gerenciamento dos integrantes da Banda Marcial Municipal de Marília (Gil, 2019).
+Este projeto caracteriza-se como uma pesquisa aplicada, de natureza qualitativa e com abordagem exploratória e descritiva. A pesquisa aplicada tem como objetivo gerar conhecimentos para a solução de problemas específicos, neste caso, a ausência de um sistema digital para o cadastro e gerenciamento dos integrantes da Banda Marcial Cidade de Marília (Gil, 2019).
 
 A abordagem qualitativa foi adotada por permitir a compreensão do contexto organizacional e das necessidades dos usuários, sem a utilização de dados estatísticos, focando na interpretação das informações coletadas. Já o caráter exploratório justifica-se pela necessidade de aprofundar o conhecimento sobre o problema e identificar possíveis soluções, enquanto o aspecto descritivo busca detalhar as características do sistema a ser desenvolvido e seu funcionamento (Prodanov; Freitas, 2013).
 
@@ -354,7 +354,7 @@ Apesar dos avanços obtidos, ainda existem etapas a serem concluídas, como a im
 
 ## Considerações Finais
 
-O desenvolvimento do presente projeto proporcionou à equipe a oportunidade de aplicar, na prática, conceitos de engenharia de software, modelagem de banco de dados, desenvolvimento web e segurança da informação. A experiência de trabalhar com uma demanda real da comunidade — a Banda Marcial Municipal de Marília — reforçou a importância da tecnologia como ferramenta de transformação social e administrativa.
+O desenvolvimento do presente projeto proporcionou à equipe a oportunidade de aplicar, na prática, conceitos de engenharia de software, modelagem de banco de dados, desenvolvimento web e segurança da informação. A experiência de trabalhar com uma demanda real da comunidade — a Banda Marcial Cidade de Marília — reforçou a importância da tecnologia como ferramenta de transformação social e administrativa.
 
 A adoção de uma solução digital tende a aumentar a eficiência da gestão, reduzir inconsistências e promover maior segurança e acessibilidade das informações, contribuindo para a modernização dos processos administrativos da instituição. O sistema desenvolvido é flexível o suficiente para ser adaptado a outras organizações similares, ampliando seu impacto social.
 

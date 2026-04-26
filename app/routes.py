@@ -779,6 +779,140 @@ def excluir_instrumento(instrumento_id):
     return redirect(url_for("main.listar_instrumentos"))
 
 
+# ========================
+# ROTAS PARA GESTÃO DE TIPOS DE INSTRUMENTO
+# ========================
+
+@main_bp.route("/admin/tipos", methods=["GET", "POST"])
+@login_required
+@profissional_required
+def listar_tipos():
+    """Lista tipos de instrumento e permite criar novo"""
+    if request.method == "POST":
+        nome = normalizar_campo_texto(request.form.get("nome"))
+        if not nome:
+            flash("Nome do tipo é obrigatório.")
+            return redirect(url_for("main.listar_tipos"))
+        if TipoInstrumento.query.filter(db.func.lower(TipoInstrumento.nome) == nome.lower()).first():
+            flash("Tipo já cadastrado.")
+            return redirect(url_for("main.listar_tipos"))
+        tipo = TipoInstrumento(nome=nome)
+        db.session.add(tipo)
+        db.session.commit()
+        flash("Tipo criado com sucesso!")
+        return redirect(url_for("main.listar_tipos"))
+
+    tipos = TipoInstrumento.query.order_by(TipoInstrumento.nome).all()
+    return render_template("admin_tipos.html", tipos=tipos)
+
+
+@main_bp.route("/admin/tipo/edit/<int:tipo_id>", methods=["GET", "POST"])
+@login_required
+@profissional_required
+def editar_tipo(tipo_id):
+    """Edita um tipo de instrumento"""
+    tipo = TipoInstrumento.query.get_or_404(tipo_id)
+    if request.method == "POST":
+        nome = normalizar_campo_texto(request.form.get("nome"))
+        if not nome:
+            flash("Nome do tipo é obrigatório.")
+            return redirect(url_for("main.editar_tipo", tipo_id=tipo_id))
+        existente = TipoInstrumento.query.filter(
+            db.func.lower(TipoInstrumento.nome) == nome.lower(),
+            TipoInstrumento.id != tipo_id
+        ).first()
+        if existente:
+            flash("Já existe outro tipo com esse nome.")
+            return redirect(url_for("main.editar_tipo", tipo_id=tipo_id))
+        tipo.nome = nome
+        db.session.commit()
+        flash("Tipo atualizado com sucesso!")
+        return redirect(url_for("main.listar_tipos"))
+    return render_template("admin_tipos.html", tipos=TipoInstrumento.query.order_by(TipoInstrumento.nome).all(), tipo_editar=tipo)
+
+
+@main_bp.route("/admin/tipo/delete/<int:tipo_id>", methods=["POST"])
+@login_required
+@profissional_required
+def excluir_tipo(tipo_id):
+    """Exclui um tipo de instrumento se não houver dependências"""
+    tipo = TipoInstrumento.query.get_or_404(tipo_id)
+    if tipo.instrumentos:
+        flash(f"Não é possível excluir: existem {len(tipo.instrumentos)} instrumento(s) vinculado(s) a este tipo.", "warning")
+        return redirect(url_for("main.listar_tipos"))
+    db.session.delete(tipo)
+    db.session.commit()
+    flash("Tipo excluído com sucesso!")
+    return redirect(url_for("main.listar_tipos"))
+
+
+# ========================
+# ROTAS PARA GESTÃO DE NAIPES
+# ========================
+
+@main_bp.route("/admin/naipes", methods=["GET", "POST"])
+@login_required
+@profissional_required
+def listar_naipes():
+    """Lista naipes e permite criar novo"""
+    if request.method == "POST":
+        nome = normalizar_campo_texto(request.form.get("nome"))
+        if not nome:
+            flash("Nome do naipe é obrigatório.")
+            return redirect(url_for("main.listar_naipes"))
+        if Naipe.query.filter(db.func.lower(Naipe.nome) == nome.lower()).first():
+            flash("Naipe já cadastrado.")
+            return redirect(url_for("main.listar_naipes"))
+        naipe = Naipe(nome=nome)
+        db.session.add(naipe)
+        db.session.commit()
+        flash("Naipe criado com sucesso!")
+        return redirect(url_for("main.listar_naipes"))
+
+    naipes = Naipe.query.order_by(Naipe.nome).all()
+    return render_template("admin_naipes.html", naipes=naipes)
+
+
+@main_bp.route("/admin/naipe/edit/<int:naipe_id>", methods=["GET", "POST"])
+@login_required
+@profissional_required
+def editar_naipe(naipe_id):
+    """Edita um naipe"""
+    naipe = Naipe.query.get_or_404(naipe_id)
+    if request.method == "POST":
+        nome = normalizar_campo_texto(request.form.get("nome"))
+        if not nome:
+            flash("Nome do naipe é obrigatório.")
+            return redirect(url_for("main.editar_naipe", naipe_id=naipe_id))
+        existente = Naipe.query.filter(
+            db.func.lower(Naipe.nome) == nome.lower(),
+            Naipe.id != naipe_id
+        ).first()
+        if existente:
+            flash("Já existe outro naipe com esse nome.")
+            return redirect(url_for("main.editar_naipe", naipe_id=naipe_id))
+        naipe.nome = nome
+        db.session.commit()
+        flash("Naipe atualizado com sucesso!")
+        return redirect(url_for("main.listar_naipes"))
+    return render_template("admin_naipes.html", naipes=Naipe.query.order_by(Naipe.nome).all(), naipe_editar=naipe)
+
+
+@main_bp.route("/admin/naipe/delete/<int:naipe_id>", methods=["POST"])
+@login_required
+@profissional_required
+def excluir_naipe(naipe_id):
+    """Exclui um naipe se não houver dependências"""
+    naipe = Naipe.query.get_or_404(naipe_id)
+    if naipe.instrumentos:
+        flash(f"Não é possível excluir: existem {len(naipe.instrumentos)} instrumento(s) vinculado(s) a este naipe.", "warning")
+        return redirect(url_for("main.listar_naipes"))
+    db.session.delete(naipe)
+    db.session.commit()
+    flash("Naipe excluído com sucesso!")
+    return redirect(url_for("main.listar_naipes"))
+
+
 @main_bp.route("/admin/escola/delete/<int:escola_id>", methods=["POST"])
 @login_required
 @admin_required

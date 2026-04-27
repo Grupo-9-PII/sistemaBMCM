@@ -54,6 +54,9 @@
               <li><a class="dropdown-item" href="{{ url_for('main.listar_usuarios') }}">
                 <i class="bi bi-gear me-2"></i>Gerenciar Usuários
               </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('main.painel_backup') }}">
+                <i class="bi bi-database-fill-gear me-2"></i>Backup do Banco
+              </a></li>
               <li><hr class="dropdown-divider"></li>
               {% endif %}
               <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">

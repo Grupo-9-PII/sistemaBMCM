@@ -28,6 +28,15 @@ from .utils import (
     obter_autorizacao_foto_vigente,
     TERMO_AUTORIZACAO_FOTO_VERSAO,
 )
+from .backup import (
+    listar_backups,
+    criar_backup,
+    restaurar_backup,
+    excluir_backup,
+    validar_backup,
+    obter_pasta_backup_usuario,
+    SENHA_BACKUP_PADRAO,
+)
 from datetime import datetime
 import os
 from werkzeug.utils import secure_filename
@@ -1071,6 +1080,105 @@ def relatorio_aluno(aluno_id):
     return render_template("relatorio_aluno_individual_profissional.html", 
                            aluno=aluno, 
                            data_geracao=data_geracao)
+
+
+# ========================
+# ROTAS PARA BACKUP E RESTAURAÇÃO
+# ========================
+
+@main_bp.route("/admin/backup")
+@login_required
+@admin_required
+def painel_backup():
+    """Painel de gerenciamento de backups do banco de dados"""
+    backups = listar_backups()
+    caminho_db = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "instance", "database.db")
+    db_existe = os.path.exists(caminho_db)
+    db_tamanho = os.path.getsize(caminho_db) if db_existe else 0
+    return render_template(
+        "admin_backup.html",
+        backups=backups,
+        db_existe=db_existe,
+        db_tamanho=db_tamanho,
+        senha_padrao=SENHA_BACKUP_PADRAO,
+    )
+
+
+@main_bp.route("/admin/backup/criar", methods=["POST"])
+@login_required
+@admin_required
+def gerar_backup():
+    """Gera um novo backup do banco de dados"""
+    try:
+        caminho_db = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "instance", "database.db")
+        caminho_backup = criar_backup(caminho_db)
+        nome_arquivo = os.path.basename(caminho_backup)
+        flash(f"Backup criado com sucesso: {nome_arquivo}")
+    except Exception as e:
+        flash(f"Erro ao criar backup: {str(e)}", "error")
+    return redirect(url_for("main.painel_backup"))
+
+
+@main_bp.route("/admin/backup/restaurar", methods=["POST"])
+@login_required
+@admin_required
+def restore_backup():
+    """Restaura o banco de dados a partir de um backup"""
+    nome_backup = request.form.get("nome_backup")
+    if not nome_backup:
+        flash("Nenhum backup selecionado.", "error")
+        return redirect(url_for("main.painel_backup"))
+
+    pasta_backup = obter_pasta_backup_usuario()
+    caminho_backup = os.path.join(pasta_backup, nome_backup)
+
+    if not os.path.exists(caminho_backup):
+        flash("Arquivo de backup não encontrado.", "error")
+        return redirect(url_for("main.painel_backup"))
+
+    # Validar backup
+    valido, msg = validar_backup(caminho_backup)
+    if not valido:
+        flash(msg, "error")
+        return redirect(url_for("main.painel_backup"))
+
+    try:
+        caminho_db = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "instance", "database.db")
+        sucesso, msg = restaurar_backup(caminho_backup, caminho_db)
+        if sucesso:
+            flash(msg + " É necessário reiniciar a aplicação para que as alterações tenham efeito.")
+        else:
+            flash(msg, "error")
+    except Exception as e:
+        flash(f"Erro ao restaurar backup: {str(e)}", "error")
+
+    return redirect(url_for("main.painel_backup"))
+
+
+@main_bp.route("/admin/backup/excluir", methods=["POST"])
+@login_required
+@admin_required
+def deletar_backup():
+    """Exclui um arquivo de backup"""
+    nome_backup = request.form.get("nome_backup")
+    if not nome_backup:
+        flash("Nenhum backup selecionado.", "error")
+        return redirect(url_for("main.painel_backup"))
+
+    pasta_backup = obter_pasta_backup_usuario()
+    caminho_backup = os.path.join(pasta_backup, nome_backup)
+
+    if not os.path.exists(caminho_backup):
+        flash("Arquivo de backup não encontrado.", "error")
+        return redirect(url_for("main.painel_backup"))
+
+    sucesso, msg = excluir_backup(caminho_backup)
+    if sucesso:
+        flash(msg)
+    else:
+        flash(msg, "error")
+
+    return redirect(url_for("main.painel_backup"))
 
 
 @main_bp.route("/admin/creditos")

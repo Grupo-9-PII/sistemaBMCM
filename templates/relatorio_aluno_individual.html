@@ -24,6 +24,8 @@
             <tr><td><strong>Email:</strong></td><td>{{ aluno.email or '-' }}</td></tr>
             <tr><td><strong>Telefone:</strong></td><td>{{ aluno.telefone or '-' }}</td></tr>
             <tr><td><strong>Escola:</strong></td><td>{{ aluno.escolas[0].escola.nome if aluno.escolas else '-' }}</td></tr>
+            <tr><td><strong>Data Entrada Banda:</strong></td><td>{{ aluno.data_entrada_banda.strftime('%d/%m/%Y') if aluno.data_entrada_banda else '-' }}</td></tr>
+            <tr><td><strong>Data Desligamento Banda:</strong></td><td>{{ aluno.data_desligamento_banda.strftime('%d/%m/%Y') if aluno.data_desligamento_banda else '-' }}</td></tr>
           </table>
         </div>
       </div>

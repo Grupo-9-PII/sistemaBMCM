@@ -59,6 +59,8 @@ def test_criar_aluno_persiste_registro(client):
             "bairro": "Centro",
             "cidade": "Sao Paulo",
             "estado": "SP",
+            "data_entrada_banda": "2023-01-15",
+            "data_desligamento_banda": "",
         },
         follow_redirects=False,
     )
@@ -70,6 +72,42 @@ def test_criar_aluno_persiste_registro(client):
     assert aluno is not None
     assert aluno.nome == "ALUNO TESTE"
     assert aluno.email == "aluno.teste@example.com"
+    assert aluno.ativo == True  # Deve ser ativo quando não há data de desligamento
+
+
+def test_criar_aluno_desligado_inativa_registro(client):
+    from app.models import Aluno
+
+    response = client.post(
+        "/admin/aluno/create",
+        data={
+            "nome": "Aluno Desligado",
+            "cin_rg": "98.765.432-1",
+            "email": "desligado@example.com",
+            "telefone": "(11) 99876-5432",
+            "data_nascimento": "",
+            "naturalidade": "Campinas",
+            "cep": "13010-111",
+            "endereco": "Rua Desligada",
+            "numero": "456",
+            "complemento": "",
+            "bairro": "Centro",
+            "cidade": "Campinas",
+            "estado": "SP",
+            "data_entrada_banda": "2022-03-10",
+            "data_desligamento_banda": "2024-12-31",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code in (302, 303)
+    assert "/admin/alunos" in response.headers.get("Location", "")
+
+    aluno = Aluno.query.filter_by(cin_rg="98.765.432-1").first()
+    assert aluno is not None
+    assert aluno.nome == "ALUNO DESLIGADO"
+    assert aluno.email == "desligado@example.com"
+    assert aluno.ativo == False  # Deve ser inativo quando há data de desligamento
 
 
 def test_editar_aluno_atualiza_registro(client):
@@ -96,6 +134,8 @@ def test_editar_aluno_atualiza_registro(client):
             "bairro": "Centro",
             "cidade": "Campinas",
             "estado": "SP",
+            "data_entrada_banda": "2023-02-20",
+            "data_desligamento_banda": "2024-12-31",
         },
         follow_redirects=False,
     )
@@ -108,6 +148,7 @@ def test_editar_aluno_atualiza_registro(client):
     assert aluno_atualizado.nome == "ALUNO ALTERADO"
     assert aluno_atualizado.cin_rg == "22.222.222-2"
     assert aluno_atualizado.email == "alterado@example.com"
+    assert aluno_atualizado.ativo == False  # Deve ser inativo quando data de desligamento é definida
 
 
 def test_criar_aluno_com_documento_tipo_cpf(client):

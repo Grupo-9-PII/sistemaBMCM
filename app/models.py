@@ -86,6 +86,8 @@ class Aluno(db.Model):
     funcao_id = db.Column(db.Integer, db.ForeignKey('funcao_banda.id'))
     funcao = db.relationship('FuncaoBanda', backref='alunos')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    data_entrada_banda = db.Column(db.Date, nullable=True)
+    data_desligamento_banda = db.Column(db.Date, nullable=True)
     
     # Relacionamentos
     responsaveis = db.relationship('Responsavel', backref='aluno', lazy=True, cascade='all, delete-orphan')

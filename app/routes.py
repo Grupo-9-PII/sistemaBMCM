@@ -256,6 +256,8 @@ def criar_aluno():
         bairro = normalizar_campo_texto(request.form.get("bairro"))
         cidade = normalizar_campo_texto(request.form.get("cidade"))
         estado = request.form.get("estado").upper().strip() if request.form.get("estado") else None
+        data_entrada_banda = request.form.get("data_entrada_banda")
+        data_desligamento_banda = request.form.get("data_desligamento_banda")
         
         if not nome:
             flash("Nome é obrigatório.")
@@ -272,6 +274,25 @@ def criar_aluno():
             except ValueError:
                 flash("Data de nascimento inválida.")
                 return redirect(url_for("main.criar_aluno"))
+
+        data_entrada = None
+        if data_entrada_banda:
+            try:
+                data_entrada = datetime.strptime(data_entrada_banda, '%Y-%m-%d').date()
+            except ValueError:
+                flash("Data de entrada na banda inválida.")
+                return redirect(url_for("main.criar_aluno"))
+
+        data_desligamento = None
+        if data_desligamento_banda:
+            try:
+                data_desligamento = datetime.strptime(data_desligamento_banda, '%Y-%m-%d').date()
+            except ValueError:
+                flash("Data de desligamento da banda inválida.")
+                return redirect(url_for("main.criar_aluno"))
+
+        # Define o status ativo baseado na data de desligamento
+        ativo = data_desligamento is None
 
         foto = request.files.get("foto")
         tem_upload_novo = bool(foto and foto.filename)
@@ -298,10 +319,12 @@ def criar_aluno():
             numero=numero,
             complemento=complemento,
             funcao_id=funcao_id,
+            data_entrada_banda=data_entrada,
+            data_desligamento_banda=data_desligamento,
             bairro=bairro,
             cidade=cidade,
             estado=estado,
-            ativo=True
+            ativo=ativo
         )
         db.session.add(novo_aluno)
         db.session.flush()
@@ -402,6 +425,8 @@ def editar_aluno(aluno_id):
         bairro = normalizar_campo_texto(request.form.get("bairro"))
         cidade = normalizar_campo_texto(request.form.get("cidade"))
         estado = request.form.get("estado").upper().strip() if request.form.get("estado") else None
+        data_entrada_banda = request.form.get("data_entrada_banda")
+        data_desligamento_banda = request.form.get("data_desligamento_banda")
         
         if not nome:
             flash("Nome é obrigatório.")
@@ -420,6 +445,25 @@ def editar_aluno(aluno_id):
             except ValueError:
                 flash("Data de nascimento inválida.")
                 return redirect(url_for("main.editar_aluno", aluno_id=aluno_id))
+
+        data_entrada = None
+        if data_entrada_banda:
+            try:
+                data_entrada = datetime.strptime(data_entrada_banda, '%Y-%m-%d').date()
+            except ValueError:
+                flash("Data de entrada na banda inválida.")
+                return redirect(url_for("main.editar_aluno", aluno_id=aluno_id))
+
+        data_desligamento = None
+        if data_desligamento_banda:
+            try:
+                data_desligamento = datetime.strptime(data_desligamento_banda, '%Y-%m-%d').date()
+            except ValueError:
+                flash("Data de desligamento da banda inválida.")
+                return redirect(url_for("main.editar_aluno", aluno_id=aluno_id))
+
+        # Define o status ativo baseado na data de desligamento
+        ativo = data_desligamento is None
 
         foto = request.files.get("foto")
         tem_upload_novo = bool(foto and foto.filename)
@@ -445,6 +489,9 @@ def editar_aluno(aluno_id):
         aluno.numero = numero
         aluno.complemento = complemento
         aluno.funcao_id = funcao_id
+        aluno.data_entrada_banda = data_entrada
+        aluno.data_desligamento_banda = data_desligamento
+        aluno.ativo = ativo
         aluno.bairro = bairro
         aluno.cidade = cidade
         aluno.estado = estado

@@ -320,6 +320,14 @@ def migrar_banco_novos_campos():
         if 'funcao_id' not in columns:
             db.session.execute(text("ALTER TABLE aluno ADD COLUMN funcao_id INTEGER"))
         
+        # Adicionar coluna data_entrada_banda se não existir
+        if 'data_entrada_banda' not in columns:
+            db.session.execute(text("ALTER TABLE aluno ADD COLUMN data_entrada_banda DATE"))
+        
+        # Adicionar coluna data_desligamento_banda se não existir
+        if 'data_desligamento_banda' not in columns:
+            db.session.execute(text("ALTER TABLE aluno ADD COLUMN data_desligamento_banda DATE"))
+        
         db.session.commit()
     except Exception as e:
         print(f"Erro na migração: {e}")

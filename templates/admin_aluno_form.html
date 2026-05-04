@@ -168,6 +168,20 @@ Declaro estar ciente de que o tratamento dos dados será realizado em conformida
                     </select>
                   </div>
                   
+                  <div class="col-md-4">
+                    <label for="data_entrada_banda" class="form-label">Data de Entrada na Banda</label>
+                    <input type="date" name="data_entrada_banda" id="data_entrada_banda" 
+                           class="form-control" 
+                           value="{{ aluno.data_entrada_banda.strftime('%Y-%m-%d') if aluno and aluno.data_entrada_banda else '' }}">
+                  </div>
+                  
+                  <div class="col-md-4">
+                    <label for="data_desligamento_banda" class="form-label">Data de Desligamento da Banda</label>
+                    <input type="date" name="data_desligamento_banda" id="data_desligamento_banda" 
+                           class="form-control" 
+                           value="{{ aluno.data_desligamento_banda.strftime('%Y-%m-%d') if aluno and aluno.data_desligamento_banda else '' }}">
+                  </div>
+                  
                   <div class="col-12">
                     <label for="nome" class="form-label">Nome Completo *</label>
                     <input type="text" name="nome" id="nome" class="form-control text-uppercase" 

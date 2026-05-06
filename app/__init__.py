@@ -3,6 +3,7 @@ import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+from datetime import timedelta
 from config import Config
 
 db = SQLAlchemy()
@@ -22,6 +23,8 @@ def create_app():
         static_folder=os.path.join(Config.BASE_DIR, "static"),
     )
     app.config.from_object(Config)
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=15)
+
 
     db.init_app(app)
     login_manager.init_app(app)

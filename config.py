@@ -6,4 +6,7 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL") or (
         "sqlite:///" + os.path.join(BASE_DIR, "instance", "database.db")
     )
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+from datetime import timedelta
+PERMANENT_SESSION_LIFETIME = timedelta(minutes=15)

@@ -1,8 +1,10 @@
 from functools import wraps
+from flask import session, flash, redirect, url_for
+from flask_login import logout_user, current_user
+from datetime import datetime, date, timedelta
 import os
 import base64
 import binascii
-from datetime import datetime, date
 from flask import redirect, url_for, flash
 from flask_login import current_user
 from .models import User, TipoInstrumento, Naipe, FuncaoBanda, Cidade, Logradouro
@@ -370,4 +372,36 @@ def registrar_autorizacao_foto_menor(aluno_id, foto_path, dados, user_id, reques
     )
     db.session.add(row)
     return True
+
+
+# Timeout de Sessão por Inatividade (15 minutos)
+SESSION_TIMEOUT_MINUTES = 15
+
+
+def update_activity():
+    """Atualiza timestamp da última atividade na session."""
+    session.modified = True
+    session['last_activity'] = datetime.utcnow().isoformat()
+
+
+def session_timeout(f):
+    """Decorator: Verifica inatividade > 15min → logout auto."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if current_user.is_authenticated:
+            last_activity_str = session.get('last_activity')
+            if last_activity_str:
+                try:
+                    last_activity = datetime.fromisoformat(last_activity_str)
+                    if datetime.utcnow() - last_activity > timedelta(minutes=SESSION_TIMEOUT_MINUTES):
+                        logout_user()
+                        flash('Sessão expirada por inatividade (15 minutos). Faça login novamente.', 'warning')
+                        return redirect(url_for('auth.login'))
+                except ValueError:
+                    # Timestamp inválido, reset
+                    update_activity()
+            else:
+                update_activity()
+        return f(*args, **kwargs)
+    return decorated_function
 

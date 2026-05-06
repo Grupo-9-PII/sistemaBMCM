@@ -27,6 +27,8 @@ from .utils import (
     registrar_autorizacao_foto_menor,
     obter_autorizacao_foto_vigente,
     TERMO_AUTORIZACAO_FOTO_VERSAO,
+    session_timeout,
+    update_activity,
 )
 from .backup import (
     listar_backups,
@@ -47,7 +49,9 @@ main_bp = Blueprint("main", __name__)
 
 @main_bp.route("/")
 @login_required
+@session_timeout
 def dashboard():
+    update_activity()
     stats = {
         'total_alunos': Aluno.query.count(),
         'alunos_ativos': Aluno.query.filter_by(ativo=True).count(),
@@ -69,7 +73,9 @@ def painel_admin():
 @main_bp.route("/admin/users")
 @login_required
 @admin_required
+@session_timeout
 def listar_usuarios():
+    update_activity()
     usuarios = User.query.all()
     return render_template("admin_users.html", usuarios=usuarios)
 

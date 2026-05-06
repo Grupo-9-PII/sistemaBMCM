@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
+from .utils import session_timeout, update_activity
 from datetime import datetime, timedelta
 from .models import User
 from . import db
@@ -28,7 +29,8 @@ def login():
             user.blocked_until = None
             db.session.commit()
 
-            login_user(user)
+            login_user(user, remember=False)
+            update_activity()
 
             if user.must_change_password:
                 return redirect(url_for("auth.change_password"))
@@ -53,14 +55,18 @@ def login():
 
 @auth_bp.route("/logout")
 @login_required
+@session_timeout
 def logout():
+    update_activity()
     logout_user()
     return redirect(url_for("auth.login"))
 
 
 @auth_bp.route("/change-password", methods=["GET", "POST"])
 @login_required
+@session_timeout
 def change_password():
+    update_activity()
     if request.method == "POST":
         senha_atual = request.form.get("current_password")
         nova_senha = request.form.get("new_password")

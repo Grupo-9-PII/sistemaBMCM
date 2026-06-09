@@ -6,12 +6,12 @@
     <div class="text-center mb-4">
       <div class="mb-3">
         <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-dark bg-opacity-75 p-3 overflow-hidden">
-          <img src="{{ url_for('static', filename='imgs/logo.jpeg') }}" alt="Banda Marcial" class="rounded-circle d-block" width="60" height="60" style="object-fit: cover;">
+          <img src="{{ url_for('static', filename=system_settings.get('login_logo_path', 'imgs/logo.jpeg')) }}" alt="Banda Marcial" class="rounded-circle d-block" width="60" height="60" style="object-fit: cover;">
           <!--i class="bi bi-mortarboard-fill" style="font-size: 2.4rem; color: #38bdf8;"></i-->
         </span>
       </div>
-      <h3 class="mt-2 mb-1">Sistema de Controle</h3>
-      <p class="login-subtitle mb-0">Banda Marcial Cidade de Marília</p>
+      <h3 class="mt-2 mb-1">{{ system_settings.get('login_title', 'Sistema de Controle') }}</h3>
+      <p class="login-subtitle mb-0">{{ system_settings.get('login_subtitle', 'Banda Marcial Cidade de Marília') }}</p>
     </div>
 
     <form method="POST">
@@ -48,7 +48,7 @@
 
     <div class="text-center mt-4">
       <small class="login-subtitle">
-       Grupo 9 — DPR7 - UNIVESP
+        {{ system_settings.get('footer_text', 'Grupo 9 — DPR7 - UNIVESP') }}<br>{{ system_settings.get('version_text', 'Versão 1.0 - Junho de 2026') }}
       </small>
     </div>
   </div>

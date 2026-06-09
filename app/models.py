@@ -27,6 +27,15 @@ class User(UserMixin, db.Model):
         return check_password_hash(self.password, password)
 
 
+class SistemaConfig(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(100), unique=True, nullable=False)
+    value = db.Column(db.String(1000), nullable=True)
+
+    def __repr__(self):
+        return f"<SistemaConfig {self.key}={self.value}>"
+
+
 # ========================
 # MODELOS DE BANDA MARCIAL
 # ========================

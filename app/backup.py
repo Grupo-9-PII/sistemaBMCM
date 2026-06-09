@@ -8,6 +8,7 @@ import zipfile
 import shutil
 from datetime import datetime
 from pathlib import Path
+from flask import current_app
 
 # Senha padrão do sistema para backup/restauração
 SENHA_BACKUP_PADRAO = "SISTBMCM2024"
@@ -18,8 +19,20 @@ PASTA_BACKUP = "BKPSISTBMCM"
 
 def obter_pasta_backup_usuario():
     """Retorna o caminho absoluto da pasta de backups do usuário."""
-    home = Path.home()
-    pasta = home / PASTA_BACKUP
+    pasta_backup = None
+    try:
+        pasta_backup = current_app.config.get("BACKUP_FOLDER")
+    except RuntimeError:
+        pasta_backup = None
+
+    if pasta_backup:
+        pasta = Path(pasta_backup)
+        if not pasta.is_absolute():
+            pasta = Path(current_app.root_path) / pasta_backup
+    else:
+        home = Path.home()
+        pasta = home / PASTA_BACKUP
+
     pasta.mkdir(parents=True, exist_ok=True)
     return str(pasta)
 

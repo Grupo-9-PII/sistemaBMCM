@@ -1,5 +1,6 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required, current_user
+from datetime import timedelta
 from .models import (
     User,
     Aluno,
@@ -29,7 +30,12 @@ from .utils import (
     TERMO_AUTORIZACAO_FOTO_VERSAO,
     session_timeout,
     update_activity,
+    validar_senha_complexidade,
+    limpar_logs_antigos,
+    definir_configuracao,
+    vazio_para_none,
 )
+
 from .backup import (
     listar_backups,
     criar_backup,
@@ -97,6 +103,11 @@ def criar_usuario():
             flash("Usuário já existe.")
             return redirect(url_for("main.criar_usuario"))
 
+        valida, mensagem = validar_senha_complexidade(password)
+        if not valida:
+            flash(mensagem)
+            return redirect(url_for("main.criar_usuario"))
+
         novo_usuario = User(
             username=username,
             is_admin=is_admin,
@@ -132,6 +143,10 @@ def editar_usuario(user_id):
         usuario.is_admin = is_admin
 
         if nova_senha:
+            valida, mensagem = validar_senha_complexidade(nova_senha)
+            if not valida:
+                flash(mensagem)
+                return redirect(url_for("main.editar_usuario", user_id=user_id))
             usuario.set_password(nova_senha)
             usuario.must_change_password = True
 
@@ -252,10 +267,12 @@ def criar_aluno():
         data_nascimento = request.form.get("data_nascimento")
         funcao_id = request.form.get("funcao_id")
         naturalidade = normalizar_campo_texto(request.form.get("naturalidade"))
-        cin_rg = request.form.get("cin_rg").upper().strip()
+        cin_rg = vazio_para_none(request.form.get("cin_rg").upper().strip())
         email = request.form.get("email").lower().strip() if request.form.get("email") else None
+        email = vazio_para_none(email)
         telefone = normalizar_telefone(request.form.get("telefone"))
-        cep = request.form.get("cep")
+        telefone = vazio_para_none(telefone)
+        cep = vazio_para_none(request.form.get("cep"))
         endereco = normalizar_campo_texto(request.form.get("endereco"))
         numero = normalizar_campo_texto(request.form.get("numero"))
         complemento = normalizar_campo_texto(request.form.get("complemento"))
@@ -421,10 +438,12 @@ def editar_aluno(aluno_id):
         nome = normalizar_campo_texto(request.form.get("nome"))
         data_nascimento = request.form.get("data_nascimento")
         naturalidade = normalizar_campo_texto(request.form.get("naturalidade"))
-        cin_rg = request.form.get("cin_rg").upper().strip()
+        cin_rg = vazio_para_none(request.form.get("cin_rg").upper().strip())
         email = request.form.get("email").lower().strip() if request.form.get("email") else None
+        email = vazio_para_none(email)
         telefone = normalizar_telefone(request.form.get("telefone"))
-        cep = request.form.get("cep")
+        telefone = vazio_para_none(telefone)
+        cep = vazio_para_none(request.form.get("cep"))
         endereco = normalizar_campo_texto(request.form.get("endereco"))
         numero = normalizar_campo_texto(request.form.get("numero"))
         complemento = normalizar_campo_texto(request.form.get("complemento"))
@@ -790,7 +809,7 @@ def criar_instrumento():
             flash("Nome obrigatório")
             return redirect(url_for("main.criar_instrumento"))
         
-        patrimonio = request.form.get("patrimonio")
+        patrimonio = vazio_para_none(request.form.get("patrimonio"))
         if patrimonio and Instrumento.query.filter_by(patrimonio=patrimonio).first():
             flash("Patrimônio já cadastrado")
             return redirect(url_for("main.criar_instrumento"))
@@ -835,8 +854,8 @@ def editar_instrumento(instrumento_id):
     naipes = Naipe.query.all()
     
     if request.method == "POST":
-        patrimonio = request.form.get("patrimonio")
-        if patrimonio != inst.patrimonio and Instrumento.query.filter_by(patrimonio=patrimonio).first():
+        patrimonio = vazio_para_none(request.form.get("patrimonio"))
+        if patrimonio and patrimonio != inst.patrimonio and Instrumento.query.filter_by(patrimonio=patrimonio).first():
             flash("Patrimônio já usado")
             return redirect(url_for("main.editar_instrumento", instrumento_id=inst.id))
         
@@ -1287,4 +1306,213 @@ def deletar_backup():
 def creditos():
     """Página de Créditos do sistema"""
     return render_template("Copywrite.html")
+
+
+@main_bp.route("/admin/logs/hard-delete-alunos")
+@login_required
+@admin_required
+def logs_hard_delete_alunos():
+    """Exibe auditoria de exclusões totais (hard delete) de integrantes."""
+    from .models import HardDeleteAlunoLog
+
+    logs = (
+        HardDeleteAlunoLog.query.order_by(HardDeleteAlunoLog.created_at.desc()).all()
+    )
+
+    return render_template("admin_logs_hard_delete_alunos.html", logs=logs)
+
+
+@main_bp.route("/admin/configuracoes", methods=["GET", "POST"])
+@login_required
+@admin_required
+def configuracoes():
+    """Página de configurações do sistema para administradores"""
+    if request.method == "POST":
+        logo = request.files.get("logo_banda")
+        if logo and logo.filename:
+            filename = secure_filename(logo.filename)
+            allowed_ext = os.path.splitext(filename)[1].lower()
+            if allowed_ext not in (".png", ".jpg", ".jpeg", ".gif", ".svg"):
+                flash("Formato de logo inválido.", "danger")
+                return redirect(url_for("main.configuracoes"))
+
+            upload_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "imgs")
+            os.makedirs(upload_folder, exist_ok=True)
+            saved_name = f"login_logo{allowed_ext}"
+            logo_path = os.path.join(upload_folder, saved_name)
+            logo.save(logo_path)
+            definir_configuracao("login_logo_path", f"imgs/{saved_name}")
+
+        valores = {}
+
+        if "login_titulo" in request.form:
+            valores["login_title"] = request.form.get("login_titulo", "").strip()
+        if "login_subtitulo" in request.form:
+            valores["login_subtitle"] = request.form.get("login_subtitulo", "").strip()
+        if "cor-accent" in request.form:
+            valores["theme_accent"] = request.form.get("cor-accent", "#0d6efd")
+        if "cor-fundo" in request.form:
+            valores["theme_bg"] = request.form.get("cor-fundo", "#121212")
+        if "cor-navbar" in request.form:
+            valores["navbar_bg"] = request.form.get("cor-navbar", "#343a40")
+        if "cor-superficie" in request.form:
+            valores["surface_bg"] = request.form.get("cor-superficie", "#1f1f1f")
+        if "cor-texto-aba-ativa" in request.form:
+            valores["tab_active_text"] = request.form.get("cor-texto-aba-ativa", "#ffffff")
+        if "cor-fundo-aba-ativa" in request.form:
+            valores["tab_active_bg"] = request.form.get("cor-fundo-aba-ativa", "#0d6efd")
+        if "cor-texto-aba-inativa" in request.form:
+            valores["tab_inactive_text"] = request.form.get("cor-texto-aba-inativa", "#adb5bd")
+        if "cor-fundo-aba-inativa" in request.form:
+            valores["tab_inactive_bg"] = request.form.get("cor-fundo-aba-inativa", "#212529")
+        if "texto-rodape" in request.form:
+            valores["footer_text"] = request.form.get("texto-rodape", "").strip()
+        if "texto-versao" in request.form:
+            valores["version_text"] = request.form.get("texto-versao", "").strip()
+        if "timeout-sessao" in request.form:
+            valores["session_timeout_minutes"] = request.form.get("timeout-sessao", "30").strip()
+        if "tentativas-login" in request.form:
+            valores["login_attempts_limit"] = request.form.get("tentativas-login", "5").strip()
+
+        if any(key in request.form for key in ["req-minuscula", "req-maiuscula", "req-numero", "req-simbolo", "timeout-sessao", "tentativas-login"]):
+            valores["password_lower"] = "1" if "req-minuscula" in request.form else "0"
+            valores["password_upper"] = "1" if "req-maiuscula" in request.form else "0"
+            valores["password_number"] = "1" if "req-numero" in request.form else "0"
+            valores["password_symbol"] = "1" if "req-simbolo" in request.form else "0"
+
+        if "upload-maximo" in request.form:
+            valores["upload_maximo"] = request.form.get("upload-maximo", "50").strip()
+        if "pasta-backup" in request.form:
+            valores["backup_folder"] = request.form.get("pasta-backup", "instance/backups").strip()
+        if "log-retencao" in request.form:
+            valores["log_retention_days"] = request.form.get("log-retencao", "30").strip()
+
+        for chave, valor in valores.items():
+            definir_configuracao(chave, valor)
+
+        if "upload_maximo" in valores:
+            try:
+                current_app.config["MAX_CONTENT_LENGTH"] = int(valores["upload_maximo"]) * 1024 * 1024
+            except (TypeError, ValueError):
+                pass
+
+        if "backup_folder" in valores:
+            backup_folder = valores.get("backup_folder")
+            if backup_folder:
+                if not os.path.isabs(backup_folder):
+                    backup_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), backup_folder)
+                os.makedirs(backup_folder, exist_ok=True)
+                current_app.config["BACKUP_FOLDER"] = backup_folder
+
+        if "session_timeout_minutes" in valores:
+            try:
+                timeout_minutes = int(valores["session_timeout_minutes"])
+                if timeout_minutes > 0:
+                    current_app.config["SESSION_TIMEOUT_MINUTES"] = timeout_minutes
+                    current_app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=timeout_minutes)
+            except (TypeError, ValueError):
+                pass
+
+        if "login_attempts_limit" in valores:
+            try:
+                attempts_limit = int(valores["login_attempts_limit"])
+                if attempts_limit > 0:
+                    current_app.config["LOGIN_ATTEMPTS_LIMIT"] = attempts_limit
+            except (TypeError, ValueError):
+                pass
+
+        if "log_retention_days" in valores:
+            limpar_logs_antigos()
+
+        flash("Configurações salvas com sucesso.", "success")
+        return redirect(url_for("main.configuracoes"))
+
+    return render_template("admin_configuracoes.html")
+
+
+@main_bp.route("/admin/manutencao/limpar-cache", methods=["POST"])
+@login_required
+@admin_required
+def limpar_cache():
+    """Limpa caches temporários do sistema"""
+    try:
+        # Limpar cache de templates Flask
+        current_app.jinja_env.cache = {}
+
+        # Limpar arquivos temporários
+        import tempfile
+        import shutil
+
+        temp_dir = tempfile.gettempdir()
+        for filename in os.listdir(temp_dir):
+            filepath = os.path.join(temp_dir, filename)
+            try:
+                if os.path.isfile(filepath) and filename.startswith('flask_'):
+                    os.unlink(filepath)
+            except Exception:
+                pass
+
+        flash("Cache limpo com sucesso.", "success")
+    except Exception as e:
+        flash(f"Erro ao limpar cache: {str(e)}", "danger")
+
+    return redirect(url_for("main.configuracoes"))
+
+
+@main_bp.route("/admin/manutencao/verificar-integridade", methods=["POST"])
+@login_required
+@admin_required
+def verificar_integridade():
+    """Verifica a integridade dos dados e estruturas do banco"""
+    try:
+        from .models import db
+
+        # Verificar conexão com banco
+        db.engine.execute("SELECT 1")
+
+        # Verificar tabelas principais
+        tabelas = ['aluno', 'user', 'tipo_instrumento', 'naipe', 'funcao_banda']
+        tabelas_faltando = []
+
+        for tabela in tabelas:
+            result = db.engine.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{tabela}'")
+            if not result.fetchone():
+                tabelas_faltando.append(tabela)
+
+        if tabelas_faltando:
+            flash(f"Tabelas faltando: {', '.join(tabelas_faltando)}", "warning")
+        else:
+            flash("Integridade do banco verificada com sucesso.", "success")
+
+    except Exception as e:
+        flash(f"Erro na verificação de integridade: {str(e)}", "danger")
+
+    return redirect(url_for("main.configuracoes"))
+
+
+@main_bp.route("/admin/manutencao/reindexar", methods=["POST"])
+@login_required
+@admin_required
+def reindexar_banco():
+    """Reindexa tabelas do banco para otimizar consultas"""
+    try:
+        from .models import db
+
+        # Reindexar tabelas principais (SQLite não tem REINDEX, mas podemos analisar)
+        tabelas = ['aluno', 'user', 'tipo_instrumento', 'naipe', 'funcao_banda']
+
+        for tabela in tabelas:
+            try:
+                # Para SQLite, podemos executar ANALYZE para atualizar estatísticas
+                db.engine.execute(f"ANALYZE {tabela}")
+            except Exception:
+                pass  # Ignorar erros em tabelas que podem não existir
+
+        flash("Reindexação concluída com sucesso.", "success")
+
+    except Exception as e:
+        flash(f"Erro na reindexação: {str(e)}", "danger")
+
+    return redirect(url_for("main.configuracoes"))
+
 

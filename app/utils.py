@@ -1,5 +1,5 @@
 from functools import wraps
-from flask import session, flash, redirect, url_for
+from flask import session, flash, redirect, url_for, current_app
 from flask_login import logout_user, current_user
 from datetime import datetime, date, timedelta
 import os
@@ -7,7 +7,7 @@ import base64
 import binascii
 from flask import redirect, url_for, flash
 from flask_login import current_user
-from .models import User, TipoInstrumento, Naipe, FuncaoBanda, Cidade, Logradouro
+from .models import User, TipoInstrumento, Naipe, FuncaoBanda, Cidade, Logradouro, SistemaConfig
 from . import db
 from sqlalchemy import text
 from werkzeug.utils import secure_filename
@@ -130,6 +130,14 @@ def normalizar_campo_texto(campo):
         return ' '.join(campo.strip().upper().split())
     return campo
 
+def vazio_para_none(campo):
+    """Converte campos vazios ('', '   ') para None para persistir como NULL no banco."""
+    if campo is None:
+        return None
+    if isinstance(campo, str) and not campo.strip():
+        return None
+    return campo
+
 def normalizar_telefone(telefone):
     """Remove tudo exceto números e aplica máscara (11) 99999-9999"""
     if not telefone:
@@ -141,6 +149,98 @@ def normalizar_telefone(telefone):
     elif len(numeros) == 10:
         return f"({numeros[:2]}) {numeros[2:6]}-{numeros[6:]}"
     return telefone
+
+
+def obter_configuracao(chave, default=None):
+    config = SistemaConfig.query.filter_by(key=chave).first()
+    return config.value if config else default
+
+
+def obter_configuracao_int(chave, default=None):
+    valor = obter_configuracao(chave)
+    try:
+        return int(valor)
+    except (TypeError, ValueError):
+        return default
+
+
+def obter_todas_configuracoes():
+    configs = SistemaConfig.query.all()
+    return {config.key: config.value for config in configs}
+
+
+def definir_configuracao(chave, valor):
+    config = SistemaConfig.query.filter_by(key=chave).first()
+    if config:
+        config.value = valor
+    else:
+        config = SistemaConfig(key=chave, value=valor)
+        db.session.add(config)
+    db.session.commit()
+    return config
+
+
+def carregar_configuracoes_app(app):
+    with app.app_context():
+        for chave, valor in obter_todas_configuracoes().items():
+            if chave == "upload_maximo":
+                try:
+                    app.config["MAX_CONTENT_LENGTH"] = int(valor) * 1024 * 1024
+                except (TypeError, ValueError):
+                    pass
+            elif chave == "backup_folder":
+                if valor:
+                    app.config["BACKUP_FOLDER"] = valor
+            elif chave == "session_timeout_minutes":
+                try:
+                    minutos = int(valor)
+                    app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=minutos)
+                    app.config["SESSION_TIMEOUT_MINUTES"] = minutos
+                except (TypeError, ValueError):
+                    pass
+            elif chave == "login_attempts_limit":
+                try:
+                    app.config["LOGIN_ATTEMPTS_LIMIT"] = int(valor)
+                except (TypeError, ValueError):
+                    pass
+            else:
+                app.config[chave.upper()] = valor
+
+
+def validar_senha_complexidade(senha):
+    if not senha or len(senha) < 6:
+        return False, "Senha deve ter no mínimo 6 caracteres."
+
+    requisitos = []
+    if obter_configuracao('password_lower', '1') == '1' and not any(c.islower() for c in senha):
+        requisitos.append('uma letra minúscula')
+    if obter_configuracao('password_upper', '1') == '1' and not any(c.isupper() for c in senha):
+        requisitos.append('uma letra maiúscula')
+    if obter_configuracao('password_number', '1') == '1' and not any(c.isdigit() for c in senha):
+        requisitos.append('um número')
+    if obter_configuracao('password_symbol', '1') == '1' and not any(c in '!@#$%^&*()-_=+[{]}\\|;:",<.>/?' for c in senha):
+        requisitos.append('um caractere especial')
+
+    if requisitos:
+        if len(requisitos) == 1:
+            mensagem = requisitos[0]
+        else:
+            mensagem = ', '.join(requisitos[:-1]) + ' e ' + requisitos[-1]
+        return False, f"Senha deve conter {mensagem}."
+
+    return True, None
+
+
+def limpar_logs_antigos():
+    dias = obter_configuracao_int('log_retention_days', None)
+    if dias is None or dias <= 0:
+        return
+
+    from .models import HardDeleteAlunoLog
+    limite = datetime.utcnow() - timedelta(days=dias)
+    HardDeleteAlunoLog.query.filter(HardDeleteAlunoLog.created_at < limite).delete(synchronize_session=False)
+    db.session.commit()
+
 
 def criar_admin_padrao():
     admin = User.query.filter_by(is_admin=True).first()
@@ -384,8 +484,19 @@ def update_activity():
     session['last_activity'] = datetime.utcnow().isoformat()
 
 
+def get_session_timeout_minutes():
+    timeout = current_app.config.get('SESSION_TIMEOUT_MINUTES')
+    if timeout is None:
+        timeout = obter_configuracao_int('session_timeout_minutes', SESSION_TIMEOUT_MINUTES)
+
+    try:
+        return int(timeout)
+    except (TypeError, ValueError):
+        return SESSION_TIMEOUT_MINUTES
+
+
 def session_timeout(f):
-    """Decorator: Verifica inatividade > 15min → logout auto."""
+    """Decorator: Verifica inatividade > timeout → logout auto."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if current_user.is_authenticated:
@@ -393,9 +504,10 @@ def session_timeout(f):
             if last_activity_str:
                 try:
                     last_activity = datetime.fromisoformat(last_activity_str)
-                    if datetime.utcnow() - last_activity > timedelta(minutes=SESSION_TIMEOUT_MINUTES):
+                    timeout_minutes = get_session_timeout_minutes()
+                    if datetime.utcnow() - last_activity > timedelta(minutes=timeout_minutes):
                         logout_user()
-                        flash('Sessão expirada por inatividade (15 minutos). Faça login novamente.', 'warning')
+                        flash(f'Sessão expirada por inatividade ({timeout_minutes} minutos). Faça login novamente.', 'warning')
                         return redirect(url_for('auth.login'))
                 except ValueError:
                     # Timestamp inválido, reset

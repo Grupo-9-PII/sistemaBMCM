@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_user, logout_user, login_required, current_user
-from .utils import session_timeout, update_activity
+from .utils import session_timeout, update_activity, validar_senha_complexidade
 from datetime import datetime, timedelta
 from .models import User
 from . import db
@@ -39,8 +39,15 @@ def login():
 
         else:
             user.login_attempts += 1
+            limite_tentativas = current_app.config.get("LOGIN_ATTEMPTS_LIMIT", 3)
+            try:
+                limite_tentativas = int(limite_tentativas)
+            except (TypeError, ValueError):
+                limite_tentativas = 3
+            if limite_tentativas <= 0:
+                limite_tentativas = 3
 
-            if user.login_attempts >= 3:
+            if user.login_attempts >= limite_tentativas:
                 user.blocked_until = datetime.utcnow() + timedelta(hours=12)
                 user.login_attempts = 0
                 flash("Usuário bloqueado por 12 horas.")
@@ -80,8 +87,9 @@ def change_password():
             flash("As senhas não coincidem.")
             return redirect(url_for("auth.change_password"))
 
-        if len(nova_senha) < 6:
-            flash("Senha deve ter no mínimo 6 caracteres.")
+        valida, mensagem = validar_senha_complexidade(nova_senha)
+        if not valida:
+            flash(mensagem)
             return redirect(url_for("auth.change_password"))
 
         current_user.set_password(nova_senha)

@@ -31,10 +31,22 @@ def create_app():
 
     from .auth import auth_bp
     from .routes import main_bp
-    from .utils import criar_admin_padrao, criar_dados_iniciais, importar_municipios, migrar_banco_novos_campos
+    from .utils import (
+        criar_admin_padrao,
+        criar_dados_iniciais,
+        importar_municipios,
+        migrar_banco_novos_campos,
+        carregar_configuracoes_app,
+        limpar_logs_antigos,
+        obter_todas_configuracoes,
+    )
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
+
+    @app.context_processor
+    def inject_system_settings():
+        return {"system_settings": obter_todas_configuracoes()}
 
     with app.app_context():
         instance_dir = os.path.join(Config.BASE_DIR, "instance")
@@ -55,6 +67,10 @@ def create_app():
         
         # Importar municípios e logradouros do arquivo SQL
         importar_municipios()
+
+        # Carregar configurações salvas no banco para o app
+        carregar_configuracoes_app(app)
+        limpar_logs_antigos()
 
     return app
 

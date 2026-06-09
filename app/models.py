@@ -103,6 +103,14 @@ class Aluno(db.Model):
     )
 
 
+class HardDeleteAlunoLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    aluno_id = db.Column(db.Integer, db.ForeignKey('aluno.id'), nullable=False, index=True)
+    deletado_por_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    justificativa = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 class AutorizacaoFotoMenor(db.Model):
     """Consentimento do responsável para armazenar imagem do menor (LGPD / ECA Digital — trilha em rede interna)."""
     __tablename__ = 'autorizacao_foto_menor'

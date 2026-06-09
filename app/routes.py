@@ -619,6 +619,54 @@ def excluir_aluno(aluno_id):
     return redirect(url_for("main.listar_alunos"))
 
 
+@main_bp.route("/admin/aluno/hard-delete/<int:aluno_id>", methods=["POST"])
+@login_required
+@admin_required
+def hard_delete_aluno(aluno_id):
+    aluno = Aluno.query.get_or_404(aluno_id)
+
+    justificativa = (request.form.get("justificativa") or "").strip()
+    if not justificativa:
+        flash("Justificativa é obrigatória para exclusão total.", "error")
+        return redirect(url_for("main.listar_alunos"))
+
+    # Salva log (auditoria)
+    from .models import HardDeleteAlunoLog, AutorizacaoFotoMenor
+    log_row = HardDeleteAlunoLog(
+        aluno_id=aluno.id,
+        deletado_por_id=current_user.id,
+        justificativa=justificativa,
+    )
+    db.session.add(log_row)
+
+    # Remove arquivos físicos (se existirem)
+    try:
+        if aluno.foto_path:
+            foto_abs = os.path.join(os.getcwd(), "static", aluno.foto_path.split("uploads/")[-1]) if "uploads/" in aluno.foto_path else os.path.join(os.getcwd(), "static", aluno.foto_path)
+            if os.path.exists(foto_abs):
+                os.remove(foto_abs)
+
+        # Assinaturas dos responsáveis (menor de idade)
+        autorizacoes = AutorizacaoFotoMenor.query.filter_by(aluno_id=aluno.id).all()
+        for a in autorizacoes:
+            if a.assinatura_path:
+                # assinatura_path é relativo a static/
+                assinatura_rel = a.assinatura_path
+                assinatura_abs = os.path.join(os.getcwd(), "static", assinatura_rel.replace("uploads/", "")) if assinatura_rel.startswith("uploads/") else os.path.join(os.getcwd(), "static", assinatura_rel)
+                assinatura_abs = assinatura_abs.replace("\\", "/")
+                if os.path.exists(assinatura_abs):
+                    os.remove(assinatura_abs)
+    except Exception:
+        # Não bloqueia a exclusão total caso a remoção de arquivo falhe
+        pass
+
+    db.session.delete(aluno)
+    db.session.commit()
+
+    flash("Aluno excluído totalmente com sucesso! (Dados e dependências removidos)")
+    return redirect(url_for("main.listar_alunos"))
+
+
 # ========================
 # ROTAS PARA GESTÃO DE ESCOLAS
 # ========================

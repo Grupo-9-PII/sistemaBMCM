@@ -132,11 +132,22 @@
                   </a>
 
                   <form action="{{ url_for('main.excluir_aluno', aluno_id=a.id) }}" method="POST" style="display: inline-block;">
-                    <button type="submit" class="btn btn-danger" title="Excluir" 
+                    <button type="submit" class="btn btn-danger" title="Inativar" 
                             onclick="return confirm('Inativar {{ a.nome }}?')">
                       <i class="bi bi-trash"></i>
                     </button>
                   </form>
+
+                  <button type="button" class="btn btn-sm btn-danger"
+                          title="Excluir totalmente"
+                          onclick="const j = prompt('Informe a justificativa para excluir totalmente (obrigatório):'); if(j && j.trim().length>0){ document.getElementById('harddel_{{ a.id }}').value=j.trim(); document.getElementById('hardform_{{ a.id }}').submit(); }">
+                    <i class="bi bi-exclamation-triangle"></i>
+                  </button>
+
+                  <form id="hardform_{{ a.id }}" action="{{ url_for('main.hard_delete_aluno', aluno_id=a.id) }}" method="POST" style="display:none;">
+                    <input type="hidden" name="justificativa" id="harddel_{{ a.id }}" />
+                  </form>
+
                   {% endif %}
                 </div>
               </td>
